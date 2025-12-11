@@ -24,6 +24,7 @@
   .card-head{background:#f8fafc;padding:10px 15px;font-weight:700;font-size:12px;color:#64748b;border-bottom:1px solid #e6eefb;text-transform:uppercase;}
   .card-body{padding:15px;}
   .hidden { display:none !important; }
+  .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: none; z-index: 100; }
 </style>
 </head>
 <body class="pb-32">
@@ -49,6 +50,38 @@
         <div id="historyCount" class="text-xs text-slate-500">0</div>
       </div>
       <div id="historyList" class="space-y-2 text-sm text-slate-600">Memuat history...</div>
+    </div>
+
+    <!-- ADMIN PANEL (di dalam index, hidden by default) -->
+    <div id="adminPanel" class="card p-3 hidden">
+      <div class="flex justify-between items-center mb-2">
+        <div class="font-bold">Admin - Tambah Data Master</div>
+        <div style="font-size:12px;color:#64748b;cursor:pointer" onclick="closeAdmin()">Tutup</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <select id="adminType" class="input-base">
+          <option value="supervisor">Supervisor</option>
+          <option value="foreman">Foreman</option>
+          <option value="checker">Checker</option>
+          <option value="unit">Unit</option>
+          <option value="driver">Driver</option>
+        </select>
+        <input id="adminValue" class="input-base" placeholder="Masukkan nama / kode (mis. 01-F / Agus)">
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="addPerson()" class="bg-indigo-600 text-white px-4 py-2 rounded font-bold">Tambah</button>
+        <button onclick="reloadSettingsFromServer()" class="bg-white border border-slate-200 px-4 py-2 rounded font-bold">Refresh</button>
+      </div>
+
+      <div id="adminLists" class="mt-4 text-sm text-slate-600">
+        <div><strong>Supervisor:</strong> <span id="listSpv">-</span></div>
+        <div><strong>Foreman:</strong> <span id="listFrm">-</span></div>
+        <div><strong>Checker:</strong> <span id="listChk">-</span></div>
+        <div><strong>Unit:</strong> <span id="listUnit">-</span></div>
+        <div><strong>Driver:</strong> <span id="listDriver">-</span></div>
+      </div>
     </div>
 
     <!-- 0. DATA OPERASIONAL -->
@@ -227,6 +260,9 @@
     </div>
 
   </div>
+
+  <!-- FAB add (masuk form harian) -->
+  <button class="fab" onclick="window.scrollTo(0, document.body.scrollHeight);">+</button>
 
   <!-- TOAST -->
   <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded shadow-xl text-xs hidden transition-all duration-300 transform translate-y-10">Teks berhasil disalin!</div>
@@ -517,12 +553,31 @@ function copyReport(isMalam){
   const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
   const t = document.getElementById('toast'); t.classList.remove('hidden','translate-y-10'); setTimeout(()=>t.classList.add('translate-y-10'),2000); setTimeout(()=>t.classList.add('hidden'),2300);
 
-  // save history to firestore or local
+  // save history to firestore or local and also update local history list immediately
   const historyObj = { action:'copy_report', shift, date: document.getElementById('inputTanggal').value, summary: txt, by:'public', ts: db ? firebase.firestore.FieldValue.serverTimestamp() : Date.now() };
   if(db){
-    db.collection('history').add(historyObj).catch(e=>console.error('history save err',e));
+    db.collection('history').add(historyObj)
+      .then(()=> {
+        const hlocal = JSON.parse(localStorage.getItem('hist')||'[]');
+        const short = { shift: historyObj.shift, date: historyObj.date||new Date().toISOString(), summary: historyObj.summary, ts: Date.now() };
+        hlocal.unshift(short);
+        localStorage.setItem('hist', JSON.stringify(hlocal));
+        renderHistoryLocal(hlocal);
+      })
+      .catch(e => {
+        console.error('history save err', e);
+        const hlocal = JSON.parse(localStorage.getItem('hist')||'[]');
+        const short = { shift: historyObj.shift, date: historyObj.date||new Date().toISOString(), summary: historyObj.summary, ts: Date.now() };
+        hlocal.unshift(short);
+        localStorage.setItem('hist', JSON.stringify(hlocal));
+        renderHistoryLocal(hlocal);
+      });
   } else {
-    const h = JSON.parse(localStorage.getItem('hist')||'[]'); h.unshift(historyObj); localStorage.setItem('hist',JSON.stringify(h)); renderHistoryLocal(h);
+    const hlocal = JSON.parse(localStorage.getItem('hist')||'[]');
+    const short = { shift: historyObj.shift, date: historyObj.date||new Date().toISOString(), summary: historyObj.summary, ts: Date.now() };
+    hlocal.unshift(short);
+    localStorage.setItem('hist', JSON.stringify(hlocal));
+    renderHistoryLocal(hlocal);
   }
 }
 
@@ -599,15 +654,15 @@ function viewHistory(summary, title, dt){
 }
 
 /* safe helpers */
-function escapeHtml(s){ return s.replaceAll("'", "\\'").replaceAll('"','&quot;').replaceAll('\n','\\n').replaceAll('\r',''); }
-function unescapeHtml(s){ return s.replaceAll('\\n','\n').replaceAll('\\r',''); }
+function escapeHtml(s){ return String(s||'').replaceAll("'", "\\'").replaceAll('"','&quot;').replaceAll('\n','\\n').replaceAll('\r',''); }
+function unescapeHtml(s){ return String(s||'').replaceAll('\\n','\n').replaceAll('\\r',''); }
 
-/* ===== ADMIN (prompt) ===== */
+/* ===== ADMIN (prompt) & admin panel funcs ===== */
 function openAdmin(){
   const logged = sessionStorage.getItem('adminkey') === ADMIN_TOKEN;
   if(logged){
-    document.getElementById('configPanel').classList.remove('hidden');
-    document.getElementById('adminSaveNote').innerText = 'Admin mode aktif. Tambah master lalu simpan (otomatis saat tambah).';
+    document.getElementById('adminPanel').classList.remove('hidden');
+    renderAdminLists();
     return;
   }
   const user = prompt('Username:','admin');
@@ -615,12 +670,75 @@ function openAdmin(){
   if(user === ADMIN_USER && pass === ADMIN_PASS){
     sessionStorage.setItem('adminkey', ADMIN_TOKEN);
     alert('Login admin sukses.');
-    document.getElementById('configPanel').classList.remove('hidden');
-    document.getElementById('adminSaveNote').innerText = 'Admin mode aktif.';
+    document.getElementById('adminPanel').classList.remove('hidden');
+    renderAdminLists();
   } else alert('Login gagal.');
 }
+function closeAdmin(){ document.getElementById('adminPanel').classList.add('hidden'); }
 
-/* ===== small util: render initial Sdt from local storage (already done) ===== */
+function addPerson(){
+  const type = document.getElementById('adminType').value;
+  const val = document.getElementById('adminValue').value.trim();
+  if(!val) return alert('Masukkan nilai.');
+  if(type === 'supervisor'){ SPV.push(val); initChips('spvContainer', SPV); }
+  if(type === 'foreman'){ FRM.push(val); initChips('foremanContainer', FRM); }
+  if(type === 'checker'){ CHK.push(val); initChips('checkerContainer', CHK); }
+  if(type === 'unit'){ masterUnits.push(val.toUpperCase()); renderUnitButtons(); }
+  if(type === 'driver'){ masterDrivers.push(val); renderUnitButtons(); renderSdtList(); }
+
+  const token = sessionStorage.getItem('adminkey') || null;
+  if(db && token === ADMIN_TOKEN){
+    let field = null;
+    if(type === 'supervisor') field = 'supervisors';
+    if(type === 'foreman') field = 'foremen';
+    if(type === 'checker') field = 'checkers';
+    if(type === 'unit') field = 'masterUnits';
+    if(type === 'driver') field = 'masterDrivers';
+    if(field){
+      const updateObj = {};
+      updateObj[field] = firebase.firestore.FieldValue.arrayUnion(val);
+      db.doc('settings/lists').set(updateObj, { merge: true })
+        .then(()=> {
+          document.getElementById('adminValue').value = '';
+          document.getElementById('adminSaveNote').innerText = 'Tersimpan di server.';
+          renderAdminLists();
+        })
+        .catch(e => { console.error('save master err', e); alert('Gagal simpan ke server.'); });
+    }
+  } else {
+    const local = JSON.parse(localStorage.getItem('localMasters')||'{}');
+    if(!local[type]) local[type]=[];
+    local[type].push(val);
+    localStorage.setItem('localMasters', JSON.stringify(local));
+    document.getElementById('adminValue').value = '';
+    document.getElementById('adminSaveNote').innerText = 'Tersimpan lokal (offline).';
+    renderAdminLists();
+  }
+}
+
+function renderAdminLists(){
+  document.getElementById('listSpv').innerText = (SPV.length? SPV.join(', ') : '-');
+  document.getElementById('listFrm').innerText = (FRM.length? FRM.join(', ') : '-');
+  document.getElementById('listChk').innerText = (CHK.length? CHK.join(', ') : '-');
+  document.getElementById('listUnit').innerText = (masterUnits.length? masterUnits.join(', ') : '-');
+  document.getElementById('listDriver').innerText = (masterDrivers.length? masterDrivers.join(', ') : '-');
+}
+
+function reloadSettingsFromServer(){
+  if(!db) return alert('Firebase tidak tersedia.');
+  db.doc('settings/lists').get().then(doc=>{
+    if(!doc.exists) return alert('Belum ada data di server.');
+    const d = doc.data() || {};
+    SPV = d.supervisors || SPV;
+    FRM = d.foremen || FRM;
+    CHK = d.checkers || CHK;
+    masterUnits = d.masterUnits || masterUnits;
+    masterDrivers = d.masterDrivers || masterDrivers;
+    renderMasterToUI();
+    renderAdminLists();
+    alert('Data master disegarkan.');
+  }).catch(e => { console.error(e); alert('Gagal memuat dari server'); });
+}
 
 /* ===== START FIREBASE WAIT ===== */
 waitForFirebaseAndStart();
