@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <title>Efektivitas Running - Final</title>
+    <title>Efektivitas Running</title>
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,1166 +11,323 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Lucide Icons -->
+    <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; }
-        
-        .input-base {
-            width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 6px;
-            padding: 8px; font-weight: 600; outline: none; transition: 0.2s;
-        }
-        .input-base:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); }
-
-        .time-digit {
-            width: 32px; text-align: center; border: none; outline: none; 
-            font-weight: 700; color: #334155; background: transparent;
-        }
-        .time-box {
-            display: flex; align-items: center; justify-content: center; gap: 2px;
-            background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px;
-        }
-
-        .table-input {
-            width: 100%; text-align: center; background: transparent; border: none;
-            border-bottom: 2px solid #e2e8f0; font-weight: 700; padding: 4px; outline: none;
-        }
-        .table-input:focus { border-bottom-color: #4f46e5; background: #f8fafc; }
-
-        .chip-label input:checked + div { background-color: #4f46e5; color: white; border-color: #4f46e5; }
-        .chip-div {
-            padding: 4px 10px; border-radius: 99px; border: 1px solid #cbd5e1; 
-            background: white; color: #64748b; font-size: 11px; font-weight: 700; transition: 0.2s; cursor: pointer;
-        }
-
-        .tab-btn { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #64748b; transition: 0.2s; }
-        .tab-btn.active { background: white; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-        /* page system */
-        .page { display: none; }
-        .page.active { display: block; }
-
-        /* small helpers */
+        body { font-family: 'Inter', sans-serif; background-color:#f1f5f9; color:#1e293b; }
+        .page { display:none; } .page.active { display:block; }
+        .input-base { width:100%; padding:8px; background:white; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; }
+        .input-base:focus { border-color:#4f46e5; box-shadow:0 0 0 2px rgba(79,70,229,.15); }
+        .chip-label input:checked + div { background:#4f46e5; color:white; border-color:#4f46e5; }
+        .chip-div { padding:4px 10px; border-radius:99px; border:1px solid #cbd5e1; background:white; font-size:11px; font-weight:700; color:#64748b; cursor:pointer; }
         .hidden { display:none !important; }
     </style>
 
-    <!-- Firebase init (module) -->
+    <!-- Firebase INIT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc } 
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, deleteDoc }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        window.firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyDGPkoewPcjffZ8ORwB3rrVAKiYtRYzuEk",
             authDomain: "retase-20ec2.firebaseapp.com",
             projectId: "retase-20ec2",
             storageBucket: "retase-20ec2.firebasestorage.app",
             messagingSenderId: "414104675676",
             appId: "1:414104675676:web:95f0012dadfb1743ff8d99",
-            measurementId: "G-64RN0GNMPW"
         };
 
-        const app = initializeApp(window.firebaseConfig);
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // expose helpers to non-module scripts below
         window._db = db;
         window._doc = doc;
         window._set = setDoc;
         window._get = getDoc;
+        window._add = addDoc;
+        window._del = deleteDoc;
         window._listen = onSnapshot;
         window._col = collection;
-        window._add = addDoc;
     </script>
 </head>
 <body class="pb-32">
-
-<!-- ========== PAGE: HOME ========== -->
+<!-- HOME -->
 <div id="page-home" class="page active">
-    <div class="bg-slate-900 text-white py-4 px-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
+    <div class="bg-slate-900 text-white py-4 px-4 flex justify-between sticky top-0 z-50">
         <div>
             <h1 class="text-lg font-bold">Efektivitas Running</h1>
-            <p class="text-slate-400 text-[10px]">Dashboard</p>
+            <p class="text-[10px] text-slate-400">Dashboard</p>
         </div>
-        <!-- gear admin -->
-        <button onclick="navTo('admin')" class="p-2 hover:bg-slate-700 rounded">
+        <button onclick="nav('admin')" class="p-2">
             <i data-lucide="settings" class="w-5 h-5"></i>
         </button>
     </div>
 
     <div class="max-w-3xl mx-auto px-4 mt-6">
-        <div id="history-list">
-            <!-- history cards injected by script -->
-        </div>
-
+        <div id="history-list"></div>
         <div id="empty-history" class="text-center text-slate-400 mt-20">
-            <div style="font-size:40px">📂</div>
-            Belum ada riwayat
+            <div style="font-size:40px">📂</div>Belum ada riwayat
         </div>
     </div>
 
-    <!-- FAB -->
-    <button onclick="navTo('form')"
-        class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white text-3xl w-14 h-14 rounded-full shadow-lg flex items-center justify-center">
-        +
-    </button>
+    <button onclick="nav('form')" class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-blue-600 text-white text-3xl shadow-lg flex items-center justify-center">+</button>
 </div>
 
-<!-- ========== PAGE: ADMIN ========== -->
+<!-- ADMIN -->
 <div id="page-admin" class="page">
-    <div class="bg-slate-900 text-white py-4 px-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-        <button onclick="navTo('home')" class="p-1">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
-        </button>
-        <h1 class="text-lg font-bold">Admin Panel</h1>
-        <div style="width:24px"></div>
+    <div class="bg-slate-900 text-white py-4 px-4 flex justify-between sticky top-0 z-50">
+        <button onclick="nav('home')"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+        <h1 class="font-bold text-lg">Admin Panel</h1>
+        <div class="w-5"></div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-4 mt-6 mb-24 space-y-6">
+    <div class="max-w-3xl mx-auto px-4 mt-6 space-y-6 pb-24">
 
-        <!-- SUPERVISOR -->
-        <section class="bg-white rounded-xl shadow border p-4">
-            <h2 class="font-bold text-slate-700 text-sm mb-2">Supervisor</h2>
-            <div id="admin-spv-list" class="mb-2 text-xs text-slate-600"></div>
-            <div class="flex gap-2">
-                <input id="admin-spv-inp" placeholder="Tambah Supervisor" class="input-base">
-                <button onclick="addAdminItem('spv')" class="px-3 bg-indigo-600 text-white rounded">+</button>
-            </div>
-        </section>
+        <!-- loop 5 section -->
+        <div id="admin-sections"></div>
 
-        <!-- FOREMAN -->
-        <section class="bg-white rounded-xl shadow border p-4">
-            <h2 class="font-bold text-slate-700 text-sm mb-2">Foreman</h2>
-            <div id="admin-frm-list" class="mb-2 text-xs text-slate-600"></div>
-            <div class="flex gap-2">
-                <input id="admin-frm-inp" placeholder="Tambah Foreman" class="input-base">
-                <button onclick="addAdminItem('frm')" class="px-3 bg-indigo-600 text-white rounded">+</button>
-            </div>
-        </section>
-
-        <!-- CHECKER -->
-        <section class="bg-white rounded-xl shadow border p-4">
-            <h2 class="font-bold text-slate-700 text-sm mb-2">Checker</h2>
-            <div id="admin-chk-list" class="mb-2 text-xs text-slate-600"></div>
-            <div class="flex gap-2">
-                <input id="admin-chk-inp" placeholder="Tambah Checker" class="input-base">
-                <button onclick="addAdminItem('chk')" class="px-3 bg-indigo-600 text-white rounded">+</button>
-            </div>
-        </section>
-
-        <!-- UNIT SDT -->
-        <section class="bg-white rounded-xl shadow border p-4">
-            <h2 class="font-bold text-slate-700 text-sm mb-2">Unit SDT</h2>
-            <div id="admin-unit-list" class="mb-2 text-xs text-slate-600"></div>
-            <div class="flex gap-2">
-                <input id="admin-unit-inp" placeholder="Tambah Unit" class="input-base">
-                <button onclick="addAdminItem('unit')" class="px-3 bg-indigo-600 text-white rounded">+</button>
-            </div>
-        </section>
-
-        <!-- DRIVER -->
-        <section class="bg-white rounded-xl shadow border p-4">
-            <h2 class="font-bold text-slate-700 text-sm mb-2">Driver SDT</h2>
-            <div id="admin-driver-list" class="mb-2 text-xs text-slate-600"></div>
-            <div class="flex gap-2">
-                <input id="admin-driver-inp" placeholder="Tambah Driver" class="input-base">
-                <button onclick="addAdminItem('driver')" class="px-3 bg-indigo-600 text-white rounded">+</button>
-            </div>
-        </section>
-
-        <button onclick="saveAdminMaster()" class="w-full py-3 bg-green-600 text-white font-bold rounded-xl shadow">
+        <button onclick="saveMaster()" class="w-full py-3 bg-green-600 text-white rounded-xl font-bold shadow">
             Simpan ke Server
         </button>
-
     </div>
 </div>
 
-<!-- ========== PAGE: FORM (FULL UI A) ========== -->
+<!-- FORM -->
 <div id="page-form" class="page">
-    <!-- FORM PAGE HEADER -->
-    <div class="bg-slate-900 text-white px-4 py-4 flex justify-between items-center shadow-md">
-        <button onclick="navTo('home')" class="p-1">
-            <i data-lucide='arrow-left' class='w-6 h-6'></i>
+    <div class="bg-slate-900 text-white py-4 px-4 flex justify-between sticky top-0 z-50">
+        <button onclick="nav('home')"><i data-lucide="arrow-left" class="w-6 h-6"></i></button>
+        <h1 class="font-bold text-lg">Input Form</h1>
+        <div class="w-5"></div>
+    </div>
+
+    <!-- FORM ISI -->
+    <div class="max-w-3xl mx-auto px-4 mt-6 space-y-6 pb-24">
+
+        <section class="bg-white rounded-xl border shadow p-4">
+            <h2 class="font-bold text-slate-700 mb-4 text-sm">0. Operasional</h2>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400">Shift</label>
+                    <select id="shift" class="input-base">
+                        <option>NIGHT SHIFT</option>
+                        <option>DAY SHIFT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400">Tanggal</label>
+                    <input type="date" id="tanggal" class="input-base">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-400">Supervisor</label>
+                <div id="chip-spv" class="flex flex-wrap gap-2 mt-1"></div>
+                <input id="manual-spv" placeholder="+ Manual" class="border-b w-full mt-1">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-400">Foreman</label>
+                <div id="chip-frm" class="flex flex-wrap gap-2 mt-1"></div>
+                <input id="manual-frm" placeholder="+ Manual" class="border-b w-full mt-1">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-bold text-slate-400">Checker</label>
+                <div id="chip-chk" class="flex flex-wrap gap-2 mt-1"></div>
+                <input id="manual-chk" placeholder="+ Manual" class="border-b w-full mt-1">
+            </div>
+
+        </section>
+
+        <button onclick="saveForm()" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow">
+            Simpan & Masuk History
         </button>
-        <h1 class="text-lg font-bold">Input Efektivitas Running</h1>
-        <div class="w-6"></div>
-    </div>
-
-    <div class="max-w-3xl mx-auto px-4 mt-6 space-y-6">
-
-        <!-- 0. DATA OPERASI -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-sm">
-                0. Data Operasional
-            </div>
-
-            <div class="p-4 space-y-4">
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                            Shift
-                        </label>
-                        <select id="inputShift" class="input-base">
-                            <option value="NIGHT SHIFT">🌙 NIGHT SHIFT</option>
-                            <option value="DAY SHIFT">☀️ DAY SHIFT</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                            Tanggal
-                        </label>
-                        <input type="date" id="inputTanggal" class="input-base">
-                    </div>
-                </div>
-
-                <!-- SUPERVISOR -->
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Supervisor</label>
-                    <div id="spvContainer" class="flex flex-wrap gap-2 mb-2"></div>
-                    <input id="inputSupervisorLainnya" placeholder="+ Manual"
-                           class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500">
-                </div>
-
-                <!-- FOREMAN -->
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Foreman</label>
-                    <div id="foremanContainer" class="flex flex-wrap gap-2 mb-2"></div>
-                    <input id="inputForemanLainnya" placeholder="+ Manual"
-                           class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500">
-                </div>
-
-                <!-- CHECKER -->
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Checker</label>
-                    <div id="checkerContainer" class="flex flex-wrap gap-2 mb-2"></div>
-                    <input id="inputCheckerLainnya" placeholder="+ Manual"
-                           class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500">
-                </div>
-
-                <!-- TIPPING & TRANSFER -->
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <div class="bg-blue-50 p-3 rounded border border-blue-100">
-                        <label class="text-[10px] font-bold text-blue-600 block">TIPPING ROM</label>
-                        <input type="number" id="inputTippingRom" placeholder="0"
-                               class="w-full bg-transparent text-xl font-black text-blue-900 outline-none">
-                    </div>
-
-                    <div class="bg-emerald-50 p-3 rounded border border-emerald-100">
-                        <label class="text-[10px] font-bold text-emerald-600 block">TRANSFER ROM</label>
-                        <input type="number" id="inputTransferRom" placeholder="0"
-                               class="w-full bg-transparent text-xl font-black text-emerald-900 outline-none">
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- 1. DURASI CONVEYOR -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                    <h2 class="font-bold text-slate-700 text-sm">1. Durasi Conveyor</h2>
-                    <p class="text-[10px] text-slate-400">Hitung Waktu Indikasi</p>
-                </div>
-
-                <div class="flex bg-slate-200 p-1 rounded-md">
-                    <button onclick="switchTab('SD1')" id="tab-SD1" class="tab-btn active">SD1</button>
-                    <button onclick="switchTab('SD2')" id="tab-SD2" class="tab-btn">SD2</button>
-                    <button onclick="switchTab('SD3')" id="tab-SD3" class="tab-btn">SD3</button>
-                </div>
-            </div>
-
-            <div class="p-4">
-
-                <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 text-center mb-2">
-                    <div class="col-span-1">#</div>
-                    <div class="col-span-5">Mulai</div>
-                    <div class="col-span-5">Selesai</div>
-                    <div class="col-span-1">Del</div>
-                </div>
-
-                <div id="container-SD1" class="space-y-2"></div>
-                <div id="container-SD2" class="space-y-2 hidden"></div>
-                <div id="container-SD3" class="space-y-2 hidden"></div>
-
-                <button onclick="addTimeRow(activeSD)" 
-                    class="mt-4 w-full py-3 border border-dashed border-slate-300 text-slate-500 font-bold text-xs rounded hover:bg-slate-50">
-                    + Tambah Baris
-                </button>
-
-                <div id="results" class="mt-6 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4">
-                    <div class="bg-slate-50 p-2 rounded text-center border border-slate-200">
-                        <div class="text-[10px] text-slate-400 font-bold">SD1 Indikasi</div>
-                        <div id="res-SD1" class="text-sm font-black text-slate-800">0j 0m</div>
-                        <div id="eff-SD1" class="text-[10px] font-bold text-emerald-600">12j 0m</div>
-                    </div>
-
-                    <div class="bg-slate-50 p-2 rounded text-center border border-slate-200">
-                        <div class="text-[10px] text-slate-400 font-bold">SD2 Indikasi</div>
-                        <div id="res-SD2" class="text-sm font-black text-slate-800">0j 0m</div>
-                        <div id="eff-SD2" class="text-[10px] font-bold text-emerald-600">12j 0m</div>
-                    </div>
-
-                    <div class="bg-slate-50 p-2 rounded text-center border border-slate-200">
-                        <div class="text-[10px] text-slate-400 font-bold">SD3 Indikasi</div>
-                        <div id="res-SD3" class="text-sm font-black text-slate-800">0j 0m</div>
-                        <div id="eff-SD3" class="text-[10px] font-bold text-emerald-600">12j 0m</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. UNIT RUNNING -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-sm">
-                2. Perhitungan Unit Running
-            </div>
-
-            <div class="p-4 space-y-6">
-
-                <!-- MHA -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                        <span class="text-xs font-bold text-slate-700">MHA</span>
-                    </div>
-
-                    <div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs">
-
-                        <div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200">
-                            <div class="col-span-2">SHIFT</div>
-                            <div class="col-span-4">UNIT</div>
-                            <div class="col-span-4">TRIP</div>
-                            <div class="col-span-2">HASIL</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center border-b border-slate-100">
-                            <div class="col-span-2">☀️</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="mha-run-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('mha')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="mha-trip-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('mha')">
-                            </div>
-                            <div class="col-span-2 font-black" id="mha-res-siang">0</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center bg-slate-50/50">
-                            <div class="col-span-2">🌙</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="mha-run-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('mha')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="mha-trip-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('mha')">
-                            </div>
-                            <div class="col-span-2 font-black" id="mha-res-malam">0</div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- KARUNIA -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        <span class="text-xs font-bold text-slate-700">KARUNIA</span>
-                    </div>
-
-                    <div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs">
-
-                        <div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200">
-                            <div class="col-span-2">SHIFT</div>
-                            <div class="col-span-4">UNIT</div>
-                            <div class="col-span-4">TRIP</div>
-                            <div class="col-span-2">HASIL</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center border-b border-slate-100">
-                            <div class="col-span-2">☀️</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="kai-run-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('kai')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="kai-trip-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('kai')">
-                            </div>
-                            <div class="col-span-2 font-black" id="kai-res-siang">0</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center bg-slate-50/50">
-                            <div class="col-span-2">🌙</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="kai-run-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('kai')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="kai-trip-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('kai')">
-                            </div>
-                            <div class="col-span-2 font-black" id="kai-res-malam">0</div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- BUMA -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                        <span class="text-xs font-bold text-slate-700">BUMA</span>
-                    </div>
-
-                    <div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs">
-
-                        <div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200">
-                            <div class="col-span-2">SHIFT</div>
-                            <div class="col-span-4">UNIT</div>
-                            <div class="col-span-4">TRIP</div>
-                            <div class="col-span-2">HASIL</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center border-b border-slate-100">
-                            <div class="col-span-2">☀️</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="buma-run-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('buma')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="buma-trip-siang" class="table-input"
-                                       placeholder="0" oninput="calcUnit('buma')">
-                            </div>
-                            <div class="col-span-2 font-black" id="buma-res-siang">0</div>
-                        </div>
-
-                        <div class="grid grid-cols-12 py-1 items-center bg-slate-50/50">
-                            <div class="col-span-2">🌙</div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="buma-run-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('buma')">
-                            </div>
-                            <div class="col-span-4 px-1">
-                                <input type="number" id="buma-trip-malam" class="table-input"
-                                       placeholder="0" oninput="calcUnit('buma')">
-                            </div>
-                            <div class="col-span-2 font-black" id="buma-res-malam">0</div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="bg-slate-100 p-3 rounded flex justify-between items-center text-sm">
-                    <span class="font-bold text-slate-500">Total Hauling</span>
-                    <span id="grand-total" class="font-black text-indigo-700 text-lg">0</span>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- 3. UNIT SDT RUNNING -->
-        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-                <h2 class="font-bold text-slate-700 text-sm">3. Unit SDT Running</h2>
-                <button onclick="toggleConfig()" class="text-[10px] text-blue-600 underline font-bold">Config</button>
-            </div>
-
-            <div class="p-4">
-
-                <div id="configPanel" class="hidden bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs mb-4">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="flex gap-1">
-                            <input id="newUnit" placeholder="Unit Baru" class="input-base py-1">
-                            <button onclick="addMaster('unit')" class="bg-blue-600 text-white px-2 rounded">+</button>
-                        </div>
-                        <div class="flex gap-1">
-                            <input id="newDriver" placeholder="Driver Baru" class="input-base py-1">
-                            <button onclick="addMaster('driver')" class="bg-emerald-600 text-white px-2 rounded">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <div id="unitBtnContainer" class="flex flex-wrap gap-2"></div>
-                </div>
-
-                <div id="sdtList" class="space-y-3"></div>
-
-                <div id="emptyMsg" class="text-center py-6 text-slate-300 text-xs italic border border-dashed rounded mt-2">
-                    Belum ada data. Klik tombol unit di atas.
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Buttons -->
-        <div class="grid grid-cols-2 gap-3 mt-6 mb-16">
-            <button onclick="copyReport(false)" class="bg-white border border-purple-200 text-purple-700 font-bold py-3 rounded-xl shadow-sm hover:bg-purple-50 text-xs">Salin SIANG</button>
-            <button onclick="copyReport(true)" class="bg-white border border-indigo-200 text-indigo-700 font-bold py-3 rounded-xl shadow-sm hover:bg-indigo-50 text-xs">Salin MALAM</button>
-        </div>
 
     </div>
 </div>
-
-<!-- TOAST -->
-<div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded shadow-xl text-xs hidden transition-all duration-300 transform translate-y-10">
-    Teks berhasil disalin!
-</div>
-
-<!-- ========== SCRIPTS (gabungan semua logic) ========== -->
 <script>
-/* -------------------------
-   Variabel global master
-   ------------------------- */
-let masterSPV = [];
-let masterFRM = [];
-let masterCHK = [];
-let masterUnits = [];
-let masterDrivers = [];
-
-/* -------------------------
-   Form / Conveyor / SDT holders
-   ------------------------- */
-let activeSD = 'SD1';
-let conveyorData = { SD1: [], SD2: [], SD3: [] };
-let sdtData = [];
-
-/* -------------------------
+/* ============================
    NAVIGATION
-   ------------------------- */
-function navTo(page) {
-    // hide all pages
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    // show target
-    document.getElementById('page-' + page).classList.add('active');
-
-    lucide.createIcons();
-
-    // page-specific init
-    if (page === 'form') {
-        initFormUI();
-    } else if (page === 'admin') {
-        renderAdminPanel();
-    }
-}
-
-/* -------------------------
-   Init chips renderer
-   ------------------------- */
-function initChips(containerId, list) {
-    const cont = document.getElementById(containerId);
-    if (!cont) return;
-    cont.innerHTML = list.map(n => `
-        <label class="chip-label inline-block mr-2 mb-1">
-            <input type="checkbox" value="${n}" class="hidden">
-            <div class="chip-div">${n}</div>
-        </label>
-    `).join('');
-}
-
-/* -------------------------
-   Render unit buttons
-   ------------------------- */
-function renderUnitButtons() {
-    const wrap = document.getElementById("unitBtnContainer");
-    if (!wrap) return;
-    wrap.innerHTML = masterUnits.map(u => `
-        <button onclick="addSdt('${u}')" class="bg-white border border-slate-300 text-xs font-bold text-slate-600 px-3 py-1 rounded shadow-sm hover:bg-indigo-50 hover:text-indigo-600 transition">
-            ${u}
-        </button>
-    `).join('');
-}
-
-/* -------------------------
-   Load master data from Firestore
-   ------------------------- */
-async function loadMasterData() {
-    try {
-        const db = window._db;
-        const ref = window._doc(db, "settings", "lists");
-        const snap = await window._get(ref);
-        if (!snap.exists()) {
-            console.warn("Master belum dibuat di Firestore.");
-            // fallback to defaults (so UI won't break)
-            masterSPV = ['Ihsan R','Dicky F','Sopian'];
-            masterFRM = ['Gunawan TC','Hardiansyah','Lewi S','Elimelek J'];
-            masterCHK = ['Indra R','Jemmie P','Ikram','Fahri T'];
-            masterUnits = ["01-F","02-F","03-F","3A-F","05-F","08-P","09-P","10-P","25-P"];
-            masterDrivers = ["Jeksen","Saipul","Julio","Ardianur","Suryadi","Agung","Faturahman"];
-        } else {
-            const data = snap.data();
-            masterSPV = data.spv || [];
-            masterFRM = data.frm || [];
-            masterCHK = data.chk || [];
-            masterUnits = data.unit || [];
-            masterDrivers = data.driver || [];
-        }
-
-        // render UI
-        initChips('spvContainer', masterSPV);
-        initChips('foremanContainer', masterFRM);
-        initChips('checkerContainer', masterCHK);
-        renderUnitButtons();
-        renderAdminPanel();
-        lucide.createIcons();
-    } catch (e) {
-        console.error("loadMasterData error", e);
-    }
-}
-
-/* -------------------------
-   Save master to firestore (admin)
-   ------------------------- */
-async function saveAdminMaster() {
-    try {
-        const db = window._db;
-        const ref = window._doc(db, "settings", "lists");
-        await window._set(ref, {
-            spv: masterSPV,
-            frm: masterFRM,
-            chk: masterCHK,
-            unit: masterUnits,
-            driver: masterDrivers,
-            _adminKey: "mpadmin"
-        }, { merge: true });
-        alert("Master berhasil disimpan ke server!");
-    } catch (e) {
-        console.error("saveAdminMaster error", e);
-        alert("Gagal menyimpan master. Cek console.");
-    }
-}
-
-/* -------------------------
-   Admin helpers (add items)
-   ------------------------- */
-function renderAdminPanel() {
-    document.getElementById("admin-spv-list").innerHTML = masterSPV.map(n => `<div>- ${n}</div>`).join("");
-    document.getElementById("admin-frm-list").innerHTML = masterFRM.map(n => `<div>- ${n}</div>`).join("");
-    document.getElementById("admin-chk-list").innerHTML = masterCHK.map(n => `<div>- ${n}</div>`).join("");
-    document.getElementById("admin-unit-list").innerHTML = masterUnits.map(n => `<div>- ${n}</div>`).join("");
-    document.getElementById("admin-driver-list").innerHTML = masterDrivers.map(n => `<div>- ${n}</div>`).join("");
-}
-
-function addAdminItem(type) {
-    const inp = document.getElementById(`admin-${type}-inp`);
-    let v = inp.value.trim();
-    if (!v) return;
-    if (type === "spv") masterSPV.push(v);
-    if (type === "frm") masterFRM.push(v);
-    if (type === "chk") masterCHK.push(v);
-    if (type === "unit") masterUnits.push(v.toUpperCase());
-    if (type === "driver") masterDrivers.push(v);
-    inp.value = "";
-    renderAdminPanel();
-    initChips('spvContainer', masterSPV);
-    initChips('foremanContainer', masterFRM);
-    initChips('checkerContainer', masterCHK);
-    renderUnitButtons();
+============================ */
+function nav(page){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
     lucide.createIcons();
 }
 
-/* -------------------------
-   FORM INITIALIZATION
-   ------------------------- */
-function initFormUI() {
-    // avoid duplicating rows if already initialized (only add if empty)
-    try {
-        if (document.getElementById('inputTanggal')) {
-            if (!document.getElementById('inputTanggal').value) {
-                document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
-            }
-        }
-        // ensure at least minimal conveyor rows exist
-        if (conveyorData.SD1.length === 0 && conveyorData.SD2.length === 0 && conveyorData.SD3.length === 0) {
-            addTimeRow('SD1'); addTimeRow('SD1'); addTimeRow('SD2'); addTimeRow('SD3');
-        }
-
-        lucide.createIcons();
-    } catch (e) { console.error(e); }
-}
-
-/* -------------------------
-   CONVEYOR FUNCTIONS
-   ------------------------- */
-function switchTab(sd) {
-    activeSD = sd;
-    ['SD1','SD2','SD3'].forEach(n => {
-        document.getElementById(`tab-${n}`).className = `tab-btn ${n===sd?'active':''}`;
-        document.getElementById(`container-${n}`).className = `space-y-2 ${n===sd?'':'hidden'}`;
-    });
-}
-
-function addTimeRow(sd) {
-    const idx = conveyorData[sd].length;
-    conveyorData[sd].push({ sh:'', sm:'', fh:'', fm:'' });
-
-    const div = document.createElement('div');
-    div.id = `row-${sd}-${idx}`;
-    div.className = "grid grid-cols-12 gap-2 items-center bg-white p-2 rounded border border-slate-100 shadow-sm";
-    div.innerHTML = `
-        <div class="col-span-1 text-center font-bold text-slate-300 text-xs">${idx+1}</div>
-        <div class="col-span-5 time-box"><input type="tel" maxlength="2" placeholder="HH" class="time-digit" oninput="updTime('${sd}',${idx},'sh',this)">:<input type="tel" maxlength="2" placeholder="MM" class="time-digit" oninput="updTime('${sd}',${idx},'sm',this)"></div>
-        <div class="col-span-5 time-box"><input type="tel" maxlength="2" placeholder="HH" class="time-digit" oninput="updTime('${sd}',${idx},'fh',this)">:<input type="tel" maxlength="2" placeholder="MM" class="time-digit" oninput="updTime('${sd}',${idx},'fm',this)"></div>
-        <div class="col-span-1 text-center"><button onclick="delTimeRow('${sd}',${idx})" class="text-slate-300 hover:text-red-500 font-bold">×</button></div>
-    `;
-    document.getElementById(`container-${sd}`).appendChild(div);
-}
-
-function updTime(sd, idx, f, el) {
-    let v = el.value.replace(/\D/g,''); if(v.length>2) v=v.slice(0,2);
-    if(v>23 && (f=='sh'||f=='fh')) v='23'; if(v>59 && (f=='sm'||f=='fm')) v='59';
-    el.value=v; conveyorData[sd][idx][f]=v;
-    calcConv(sd);
-    if(v.length==2){ let n=el.nextElementSibling; if(n&&n.tagName=='INPUT') n.focus(); }
-}
-
-function delTimeRow(sd, idx) {
-    const row = document.getElementById(`row-${sd}-${idx}`);
-    if (row) row.style.display='none';
-    conveyorData[sd][idx] = { sh:'', sm:'', fh:'', fm:'' };
-    calcConv(sd);
-}
-
-function calcConv(sd) {
-    let tot=0;
-    conveyorData[sd].forEach(d => {
-        if(d.sh!==''&&d.sm!==''&&d.fh!==''&&d.fm!=='') {
-            let s = parseInt(d.sh)*60+parseInt(d.sm), f = parseInt(d.fh)*60+parseInt(d.fm);
-            if(f<s) f+=1440; tot += (f-s);
-        }
-    });
-    const th=Math.floor(tot/60), tm=tot%60;
-    const resEl = document.getElementById(`res-${sd}`);
-    if (resEl) resEl.innerText = `${th}j ${tm}m`;
-    let rem = (12*60)-tot;
-    const rh=Math.floor(Math.abs(rem)/60), rm=Math.abs(rem)%60;
-    const el=document.getElementById(`eff-${sd}`);
-    if(!el) return;
-    if(tot===0) { el.innerText='-'; el.className="text-[10px] font-bold text-slate-300"; el.dataset.copy='-'; }
-    else if(rem>=0) { el.innerText=`${rh}j ${rm}m`; el.className="text-[10px] font-bold text-emerald-600"; el.dataset.copy=`${rh} Jam ${String(rm).padStart(2,'0')} Menit`; }
-    else { el.innerText=`${rh}j ${rm}m (Over)`; el.className="text-[10px] font-bold text-red-600"; el.dataset.copy=`${rh} Jam ${String(rm).padStart(2,'0')} Menit (Kelebihan Durasi)`; }
-}
-
-/* -------------------------
-   UNIT RUNNING calc
-   ------------------------- */
-function calcUnit(id) {
-    const val = (s) => parseFloat(document.getElementById(s).value)||0;
-    const rs=val(`${id}-run-siang`), ts=val(`${id}-trip-siang`), rm=val(`${id}-run-malam`), tm=val(`${id}-trip-malam`);
-    document.getElementById(`${id}-res-siang`).innerText = (ts-rs);
-    document.getElementById(`${id}-res-malam`).innerText = ((tm-ts)-rm);
-    let tot=0; ['mha','kai','buma'].forEach(k => tot += (val(`${k}-trip-malam`)-val(`${k}-trip-siang`)));
-    document.getElementById('grand-total').innerText = tot + " Trip";
-}
-
-/* -------------------------
-   SDT functions
-   ------------------------- */
-function addSdt(u) {
-    sdtData.push({ unit:u, driver:'', trip:'', ket:'' });
-    renderSdtList();
-    setTimeout(() => document.getElementById('sdtList').lastElementChild?.scrollIntoView({behavior:'smooth', block:'center'}), 100);
-}
-function delSdt(i) { sdtData.splice(i,1); renderSdtList(); }
-function updSdt(i, f, v) { sdtData[i][f] = v; }
-function renderSdtList() {
-    const c = document.getElementById('sdtList');
-    const m = document.getElementById('emptyMsg');
-    if(!c) return;
-    if(sdtData.length === 0) { c.innerHTML = ''; if(m) m.style.display = 'block'; return; }
-    if(m) m.style.display = 'none';
-    const drvOpts = `<option value="">Driver...</option>` + masterDrivers.map(d=>`<option value="${d}">${d}</option>`).join('');
-    c.innerHTML = sdtData.map((d,i) => `
-        <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2 relative">
-            <div class="flex justify-between items-center border-b border-slate-50 pb-1">
-                <span class="font-bold text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${d.unit}</span>
-                <button onclick="delSdt(${i})" class="text-red-400 hover:text-red-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
-            <div class="grid grid-cols-12 gap-2 text-xs">
-                <div class="col-span-5"><select onchange="updSdt(${i},'driver',this.value)" class="w-full border rounded p-1 bg-white outline-none">${drvOpts.replace(`value="${d.driver}"`,`value="${d.driver}" selected`)}</select></div>
-                <div class="col-span-3 relative"><input type="number" value="${d.trip}" placeholder="0" oninput="updSdt(${i},'trip',this.value)" class="w-full border rounded p-1 text-center font-bold outline-none"><span class="absolute right-1 top-1.5 text-[8px] text-slate-400 hidden sm:block">Trp</span></div>
-                <div class="col-span-4"><input type="text" value="${d.ket}" placeholder="Ket..." oninput="updSdt(${i},'ket',this.value)" class="w-full border rounded p-1 text-red-500 italic outline-none"></div>
-            </div>
-        </div>
-    `).join('');
-    lucide.createIcons();
-}
-
-/* -------------------------
-   Get checked chips
-   ------------------------- */
-function getChecked(id) {
-    const arr = Array.from(document.querySelectorAll(`#${id} input:checked`)).map(e => e.parentElement.innerText.trim());
-    let mVal = '';
-    if(id.includes('spv')) mVal = document.getElementById('inputSupervisorLainnya').value.trim();
-    if(id.includes('foreman')) mVal = document.getElementById('inputForemanLainnya').value.trim();
-    if(id.includes('checker')) mVal = document.getElementById('inputCheckerLainnya').value.trim();
-    if(mVal) arr.push(mVal);
-    return arr.join(', ');
-}
-
-/* -------------------------
-   Copy report
-   ------------------------- */
-function copyReport(isMalam) {
-    const shift = document.getElementById('inputShift').value;
-    const date = document.getElementById('inputTanggal').value.split('-');
-    const bulan = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"];
-    const fmtDate = date.length===3 ? `${date[2]}/${bulan[parseInt(date[1])-1]}/${date[0].slice(-2)}` : '-';
-
-    let txt = `*CHP OPERATION*\n*${shift}*\n*${fmtDate}*\n\nSupervisor : ${getChecked('spvContainer')}\nForeman   : ${getChecked('foremanContainer')}\nChecker      : ${getChecked('checkerContainer')}\n\nEfektivitas Running\n`;
-    ['SD1','SD2','SD3'].forEach(sd => txt += `- ${sd} = ${(document.getElementById(`eff-${sd}`).dataset.copy||'-')}\n`);
-    txt += `\n`;
-
-    const val = (id) => parseFloat(document.getElementById(id).value)||0;
-    const calc = (b) => isMalam ? (val(`${b}-trip-malam`)-val(`${b}-trip-siang`)) : val(`${b}-trip-siang`);
-    const mt=calc('mha'), kt=calc('kai'), bt=calc('buma'), tot=mt+kt+bt;
-    const tip=val('inputTippingRom'), trans=val('inputTransferRom');
-
-    txt += `Hauling\nMHA    : ${mt} TRIP\nBUMA   : ${bt} TRIP\nKAI    : ${kt} TRIP\nIP     : 0 TRIP\nTotal Hauling : ${tot} Trip\n\n`;
-    txt += `TIPPING ROM        = ${tip} Trip\nTRANSFER ROM   = ${trans} Trip\nTRANSFER ROM + HAULING = ${trans+tot} Trip\n\n`;
-
-    const suf = isMalam ? 'malam' : 'siang';
-    txt += `Unit 2 Trip\n- MHA   = ${document.getElementById(`mha-res-${suf}`).innerText} Unit\n- BUMA  = ${document.getElementById(`buma-res-${suf}`).innerText} Unit\n- KAI   = ${document.getElementById(`kai-res-${suf}`).innerText} Unit\n\n`;
-
-    txt += `Unit SDT Running:\n`;
-    if(sdtData.length === 0) txt += `(List Kosong)\n`;
-    else sdtData.forEach((d,i) => txt += `${i+1}.SDT ${d.unit} ${d.driver?`(${d.driver})`:''} : ${d.trip?d.trip+' Trip':''} ${d.ket?`*${d.ket}*`:''}\n`);
-
-    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    const t = document.getElementById('toast'); t.classList.remove('hidden','translate-y-10'); setTimeout(()=>t.classList.add('translate-y-10'),2000); setTimeout(()=>t.classList.add('hidden'),2300);
-}
-
-/* -------------------------
-   Save history to Firestore
-   ------------------------- */
-async function saveHistory() {
-    try {
-        const db = window._db;
-        const ref = window._col(db, "history");
-        const record = {
-            date: document.getElementById('inputTanggal').value,
-            shift: document.getElementById('inputShift').value,
-            total: document.getElementById('grand-total').innerText || '0',
-            time: Date.now()
-        };
-        await window._add(ref, record);
-        alert("Form berhasil disimpan!");
-        navTo('home');
-    } catch (e) {
-        console.error("saveHistory error", e);
-        alert("Gagal menyimpan history. Cek console.");
-    }
-}
-
-/* -------------------------
-   Load history realtime
-   ------------------------- */
-function loadHistoryRealtime() {
-    try {
-        const db = window._db;
-        const ref = window._col(db, "history");
-        window._listen(ref, snap => {
-            const list = document.getElementById('history-list');
-            let html = "";
-            let count = 0;
-            snap.forEach(doc => {
-                const d = doc.data();
-                count++;
-                html += `
-                    <div class="bg-white p-3 rounded-lg shadow mb-2 border border-slate-200">
-                        <div class="font-bold">${d.date}</div>
-                        <div class="text-xs text-slate-500">${d.shift}</div>
-                        <div class="text-sm mt-1 font-semibold text-indigo-700">Total: ${d.total}</div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-            document.getElementById('empty-history').style.display = (count>0)?'none':'block';
-            lucide.createIcons();
-        });
-    } catch (e) { console.error(e); }
-}
-
-/* -------------------------
-   Misc helpers
-   ------------------------- */
-function toggleConfig() {
-    const el = document.getElementById('configPanel');
-    if(!el) return;
-    el.classList.toggle('hidden');
-}
-
-/* -------------------------
-   Admin-level convenience (addMaster used in form config)
-   ------------------------- */
-function addMaster(t) {
-    if(t === 'unit') {
-        const v = document.getElementById('newUnit').value.trim();
-        if(!v) return;
-        masterUnits.push(v.toUpperCase());
-        document.getElementById('newUnit').value='';
-    } else if(t === 'driver') {
-        const v = document.getElementById('newDriver').value.trim();
-        if(!v) return;
-        masterDrivers.push(v);
-        document.getElementById('newDriver').value='';
-    }
-    renderUnitButtons();
-    renderAdminPanel();
-}
-
-/* -------------------------
-   Onload init
-   ------------------------- */
-window.onload = async () => {
-    try {
-        await loadMasterData();
-        loadHistoryRealtime();
-        lucide.createIcons();
-    } catch (e) {
-        console.error("onload init error", e);
-    }
+/* ============================
+   MASTER DATA
+============================ */
+let ms = {
+    spv: [], frm: [], chk: [], unit: [], driver: []
 };
-</script>
 
-<script type="module">
-    // FIREBASE IMPORT
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-        getFirestore, collection, doc, addDoc, setDoc, getDoc, onSnapshot, deleteDoc 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+async function loadMaster(){
+    const snap = await _get(_doc(_db,"settings","lists"));
+    if(snap.exists()){
+        let d = snap.data();
+        ms.spv = d.spv || [];
+        ms.frm = d.frm || [];
+        ms.chk = d.chk || [];
+        ms.unit = d.unit || [];
+        ms.driver = d.driver || [];
+    }
+    renderAdmin();
+    renderChips();
+}
 
-    // KONFIGURASI FIREBASE
-    const firebaseConfig = {
-        apiKey: "AIzaSyDGPkoewPcjffZ8ORwB3rrVAKiYtRYzuEk",
-        authDomain: "retase-20ec2.firebaseapp.com",
-        projectId: "retase-20ec2",
-        storageBucket: "retase-20ec2.firebasestorage.app",
-        messagingSenderId: "414104675676",
-        appId: "1:414104675676:web:95f0012dadfb1743ff8d99",
-        measurementId: "G-64RN0GNMPW"
+function renderAdmin(){
+    const sec = [
+        ["Supervisor","spv"],
+        ["Foreman","frm"],
+        ["Checker","chk"],
+        ["Unit SDT","unit"],
+        ["Driver SDT","driver"],
+    ];
+
+    let html = "";
+    sec.forEach(([label,key])=>{
+        html += `
+        <section class="bg-white rounded-xl shadow border p-4">
+            <h2 class="font-bold text-slate-700 text-sm mb-2">${label}</h2>
+            <div id="list-${key}" class="text-xs mb-2"></div>
+            <div class="flex gap-2">
+                <input id="inp-${key}" placeholder="Tambah ${label}" class="input-base">
+                <button onclick="addMaster('${key}')" class="bg-indigo-600 text-white px-3 rounded">+</button>
+            </div>
+        </section>`;
+    });
+
+    document.getElementById("admin-sections").innerHTML = html;
+    renderAdminList();
+}
+
+function renderAdminList(){
+    ["spv","frm","chk","unit","driver"].forEach(k=>{
+        document.getElementById('list-'+k).innerHTML =
+            ms[k].map((v,i)=>`
+                <div class="flex justify-between items-center">
+                    <span>- ${v}</span>
+                    <button onclick="delMaster('${k}',${i})" class="text-red-500 text-xs">Hapus</button>
+                </div>
+            `).join('');
+    });
+}
+
+function addMaster(key){
+    const el = document.getElementById("inp-"+key);
+    let v = el.value.trim();
+    if(!v) return;
+    ms[key].push(v);
+    el.value = "";
+    renderAdminList();
+    renderChips();
+}
+
+function delMaster(key,i){
+    ms[key].splice(i,1);
+    renderAdminList();
+    renderChips();
+}
+
+async function saveMaster(){
+    await _set(
+        _doc(_db,"settings","lists"),
+        { ...ms, _adminKey:"mpadmin" },
+        { merge:true }
+    );
+    alert("Master berhasil disimpan!");
+}
+
+/* ============================
+   FORM — Render Chips
+============================ */
+function renderChips(){
+    makeChip("chip-spv", ms.spv);
+    makeChip("chip-frm", ms.frm);
+    makeChip("chip-chk", ms.chk);
+}
+
+function makeChip(id, arr){
+    document.getElementById(id).innerHTML =
+        arr.map(v=>`
+            <label class="chip-label">
+                <input type="checkbox" value="${v}" class="hidden">
+                <div class="chip-div">${v}</div>
+            </label>
+        `).join('');
+}
+
+function getChecked(id){
+    return [...document.querySelectorAll(`#${id} input:checked`)]
+        .map(e=>e.value);
+}
+
+/* ============================
+   FORM — SAVE
+============================ */
+async function saveForm(){
+    const record = {
+        date: document.getElementById("tanggal").value,
+        shift: document.getElementById("shift").value,
+        spv: [...getChecked("chip-spv"), document.getElementById("manual-spv").value].filter(Boolean),
+        frm: [...getChecked("chip-frm"), document.getElementById("manual-frm").value].filter(Boolean),
+        chk: [...getChecked("chip-chk"), document.getElementById("manual-chk").value].filter(Boolean),
+        time: Date.now()
     };
 
-    // INIT
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // SHORTHAND
-    window._db = db;
-    window._col = (c, n) => collection(c, n);
-    window._doc = (c, n, id) => doc(c, n, id);
-    window._add = (c, d) => addDoc(c, d);
-    window._set = (r, d, opt) => setDoc(r, d, opt);
-    window._get = (r) => getDoc(r);
-    window._del = (r) => deleteDoc(r);
-    window._listen = (c, f) => onSnapshot(c, f);
-
-</script>
-
-
-
-
-<script>
-// ============= MASTER DATA LOCAL =============
-let masterSPV = [];
-let masterFRM = [];
-let masterCHK = [];
-let masterUnits = [];
-let masterDrivers = [];
-
-// Ambil master dari Firestore
-async function loadMasterData() {
-    const ref = window._doc(_db, "settings", "lists");
-    const snap = await window._get(ref);
-
-    if (snap.exists()) {
-        const d = snap.data();
-        masterSPV = d.spv || [];
-        masterFRM = d.frm || [];
-        masterCHK = d.chk || [];
-        masterUnits = d.unit || [];
-        masterDrivers = d.driver || [];
-    }
-
-    renderAdminPanel();
-    initChips("spvContainer", masterSPV);
-    initChips("foremanContainer", masterFRM);
-    initChips("checkerContainer", masterCHK);
-    renderUnitButtons();
+    await _add(_col(_db,"history"), record);
+    alert("Data berhasil disimpan!");
+    nav("home");
 }
 
-// Render daftar di admin
-function renderAdminPanel() {
-    const build = (arr, type) =>
-        arr.map((v,i)=>`
-            <div class="flex justify-between items-center py-1">
-                <span>${v}</span>
-                <button onclick="deleteMasterItem('${type}', ${i})" class="text-red-500">
-                    <i data-lucide='trash-2' class='w-4 h-4'></i>
-                </button>
-            </div>
-        `).join("");
-
-    document.getElementById("admin-spv-list").innerHTML = build(masterSPV, "spv");
-    document.getElementById("admin-frm-list").innerHTML = build(masterFRM, "frm");
-    document.getElementById("admin-chk-list").innerHTML = build(masterCHK, "chk");
-    document.getElementById("admin-unit-list").innerHTML = build(masterUnits, "unit");
-    document.getElementById("admin-driver-list").innerHTML = build(masterDrivers, "driver");
-
-    lucide.createIcons();
-}
-
-// Tambah master item
-function addAdminItem(type) {
-    const inp = document.getElementById(`admin-${type}-inp`);
-    const v = inp.value.trim();
-    if (!v) return;
-
-    if (type === "spv") masterSPV.push(v);
-    if (type === "frm") masterFRM.push(v);
-    if (type === "chk") masterCHK.push(v);
-    if (type === "unit") masterUnits.push(v.toUpperCase());
-    if (type === "driver") masterDrivers.push(v);
-
-    inp.value = "";
-    renderAdminPanel();
-    initChips("spvContainer", masterSPV);
-    initChips("foremanContainer", masterFRM);
-    initChips("checkerContainer", masterCHK);
-    renderUnitButtons();
-}
-
-// Hapus data master
-function deleteMasterItem(type, index) {
-    if (!confirm("Yakin hapus?")) return;
-
-    if (type === "spv") masterSPV.splice(index,1);
-    if (type === "frm") masterFRM.splice(index,1);
-    if (type === "chk") masterCHK.splice(index,1);
-    if (type === "unit") masterUnits.splice(index,1);
-    if (type === "driver") masterDrivers.splice(index,1);
-
-    renderAdminPanel();
-    initChips("spvContainer", masterSPV);
-    initChips("foremanContainer", masterFRM);
-    initChips("checkerContainer", masterCHK);
-    renderUnitButtons();
-}
-
-// Simpan master ke Firestore
-async function saveAdminMaster() {
-    const ref = window._doc(_db, "settings", "lists");
-
-    await window._set(ref, {
-        spv: masterSPV,
-        frm: masterFRM,
-        chk: masterCHK,
-        unit: masterUnits,
-        driver: masterDrivers,
-        _adminKey: "mpadmin"
-    }, { merge:true });
-
-    alert("Master berhasil disimpan ke server!");
-}
-</script>
-
-
-
-
-<script>
-// ================= HISTORY REALTIME =================
-function loadHistoryRealtime() {
-    const ref = window._col(_db, "history");
-
-    window._listen(ref, snap => {
-        const list = document.getElementById("history-list");
+/* ============================
+   HISTORY REALTIME + DELETE
+============================ */
+function loadHistory(){
+    _listen(_col(_db,"history"), snap=>{
         let html = "";
         let count = 0;
 
-        snap.forEach(doc => {
-            const d = doc.data();
+        snap.forEach(doc=>{
             count++;
-
+            let d = doc.data();
             html += `
-                <div class="bg-white p-3 rounded-lg shadow mb-2 border border-slate-200 flex justify-between items-center">
+                <div class="bg-white p-3 rounded-lg shadow mb-2 border border-slate-200 flex justify-between">
                     <div>
-                        <div class="font-bold">${d.tanggal}</div>
+                        <div class="font-bold">${d.date}</div>
                         <div class="text-xs text-slate-500">${d.shift}</div>
-                        <div class="text-sm mt-1 font-semibold text-indigo-700">
-                            Total: ${d.total}
-                        </div>
                     </div>
 
-                    <button onclick="deleteHistory('${doc.id}')" class="text-red-500">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    </button>
+                    <button onclick="deleteHistory('${doc.id}')"
+                        class="text-red-500 text-xs">Hapus</button>
                 </div>
             `;
         });
 
-        list.innerHTML = html;
-        document.getElementById("empty-history").style.display =
-            count > 0 ? "none" : "block";
-
+        document.getElementById("history-list").innerHTML = html;
+        document.getElementById("empty-history").style.display = count ? "none":"block";
         lucide.createIcons();
     });
 }
 
-// ================= HAPUS HISTORY =================
-async function deleteHistory(id) {
-    if (!confirm("Hapus laporan ini?")) return;
-
-    const ref = window._doc(_db, "history", id);
-    await window._del(ref);
+async function deleteHistory(id){
+    if(!confirm("Hapus riwayat ini?")) return;
+    await _del(_doc(_db,"history",id));
 }
 
-// ================= SIMPAN HISTORY =================
-async function saveHistory() {
-    const payload = {
-        tanggal : document.getElementById("inputTanggal").value,
-        shift   : document.getElementById("inputShift").value,
-        total   : document.getElementById("grand-total").innerText,
-        convoy  : {
-            SD1: document.getElementById("eff-SD1").innerText,
-            SD2: document.getElementById("eff-SD2").innerText,
-            SD3: document.getElementById("eff-SD3").innerText,
-        },
-        time: Date.now()
-    };
-
-    await window._add(window._col(_db, "history"), payload);
-
-    alert("Laporan disimpan!");
-
-    // Reset dan kembali ke Home
-    navTo("home");
-}
-
-// ================= NAVIGASI =================
-function navTo(page) {
-    document.getElementById("page-home").classList.add("hidden");
-    document.getElementById("page-form").classList.add("hidden");
-    document.getElementById("page-admin").classList.add("hidden");
-
-    document.getElementById(`page-${page}`).classList.remove("hidden");
-}
-
-// ================= INIT =================
-window.onload = async () => {
-    await loadMasterData();
-    loadHistoryRealtime();
+/* ============================
+   INIT
+============================ */
+window.onload = async ()=>{
+    await loadMaster();
+    loadHistory();
     lucide.createIcons();
 };
 </script>
-
-
 
 </body>
 </html>
