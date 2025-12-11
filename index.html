@@ -1,213 +1,284 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Efektivitas Running (Input)</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Efektivitas Running — Input & History</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body{font-family:'Inter',sans-serif;background:#0f1724;color:#e6eef8} .card{background:#0b1220;border-radius:10px;padding:18px;margin-bottom:16px}</style>
+  <style>
+    body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#0f1724}
+    .card{background:white;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);padding:18px}
+    .fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(2,6,23,0.12)}
+  </style>
 </head>
-<body class="p-4">
+<body class="min-h-screen">
 
-  <div class="max-w-3xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-xl font-bold">Efektivitas Running (Input)</h1>
-      <a href="admin.html" class="bg-slate-700 text-white px-3 py-1 rounded">Admin</a>
+  <!-- HEADER -->
+  <header class="bg-slate-900 text-white py-4 px-6 sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold">Efektivitas Running</h1>
+        <div class="text-slate-400 text-xs">Dashboard v3.0 Final</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a id="btnAddData" href="admin.html" class="bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded text-sm font-bold">+ Tambah Data</a>
+      </div>
     </div>
+  </header>
 
-    <div id="unitsArea" class="card">
-      <h2 class="font-bold mb-2">Unit (klik untuk tambah SDT)</h2>
+  <main class="max-w-4xl mx-auto p-4 space-y-6">
+
+    <!-- SUMMARY / PREVIEW (opsional) -->
+    <section class="card">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-lg">Ringkasan</h2>
+          <p class="text-sm text-slate-500">Preview status terakhir dan history pembuatan form.</p>
+        </div>
+        <div class="text-sm text-slate-500"> <span id="lastUpdated">—</span> </div>
+      </div>
+      <div class="mt-4 grid grid-cols-3 gap-3">
+        <div class="p-3 bg-slate-50 rounded">
+          <div class="text-xs text-slate-400">Total SDT</div>
+          <div id="stat-sdt" class="font-black text-indigo-700 text-xl">0</div>
+        </div>
+        <div class="p-3 bg-slate-50 rounded">
+          <div class="text-xs text-slate-400">Total Units</div>
+          <div id="stat-units" class="font-black text-indigo-700 text-xl">0</div>
+        </div>
+        <div class="p-3 bg-slate-50 rounded">
+          <div class="text-xs text-slate-400">History</div>
+          <div id="stat-history" class="font-black text-indigo-700 text-xl">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="card">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold">History Pembuatan Form</h3>
+        <button onclick="clearHistoryView()" class="text-sm text-slate-500">Refresh</button>
+      </div>
+      <div id="historyList" class="mt-3 space-y-2 text-sm text-slate-700">
+        <!-- history items akan render di sini -->
+        <div class="text-slate-400 italic">Memuat history...</div>
+      </div>
+    </section>
+
+    <!-- UNIT BUTTONS (dari settings.lists) -->
+    <section class="card">
+      <h3 class="font-bold mb-2">Unit (klik untuk langsung input SDT)</h3>
       <div id="unitButtons" class="flex flex-wrap gap-2"></div>
-    </div>
+    </section>
 
-    <div id="sdtArea" class="card">
-      <h2 class="font-bold mb-2">Daftar SDT</h2>
-      <div id="sdtList"></div>
-      <div id="emptyMsg" class="text-slate-400 italic mt-4">Belum ada data. Klik tombol unit di atas.</div>
-    </div>
+    <!-- FORM SECTION -->
+    <section id="formSection" class="card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold">Isi Form SDT (Publik)</h3>
+        <div class="text-xs text-slate-400">Siapa saja bisa mengisi</div>
+      </div>
 
-    <div class="mt-4">
-      <button onclick="refreshNow()" class="bg-indigo-600 text-white px-4 py-2 rounded">Refresh</button>
-    </div>
+      <form id="sdtForm" class="space-y-3" onsubmit="event.preventDefault(); submitForm();">
+        <div class="grid grid-cols-12 gap-2">
+          <div class="col-span-4">
+            <label class="text-xs text-slate-500">Unit</label>
+            <select id="formUnit" class="w-full p-2 border rounded bg-white"></select>
+          </div>
+          <div class="col-span-4">
+            <label class="text-xs text-slate-500">Driver</label>
+            <select id="formDriver" class="w-full p-2 border rounded bg-white"></select>
+          </div>
+          <div class="col-span-2">
+            <label class="text-xs text-slate-500">Trip</label>
+            <input id="formTrip" type="number" min="0" class="w-full p-2 border rounded bg-white" value="0">
+          </div>
+          <div class="col-span-2">
+            <label class="text-xs text-slate-500">SD</label>
+            <select id="formSd" class="w-full p-2 border rounded bg-white">
+              <option>SD1</option><option>SD2</option><option>SD3</option>
+            </select>
+          </div>
+        </div>
 
-    <div id="log" class="mt-4 text-xs text-slate-400"></div>
-  </div>
+        <div>
+          <label class="text-xs text-slate-500">Keterangan (opsional)</label>
+          <input id="formKet" class="w-full p-2 border rounded bg-white" placeholder="Contoh: Breakdown / Extra Trip">
+        </div>
+
+        <div class="flex gap-2">
+          <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold">Kirim</button>
+          <button type="button" onclick="resetForm()" class="bg-slate-100 px-4 py-2 rounded">Reset</button>
+        </div>
+
+        <div id="formMsg" class="text-sm text-slate-500"></div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- Floating button (isi form cepat) -->
+  <button class="fab bg-indigo-600 text-white" title="Isi Form" onclick="scrollToForm()">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  </button>
 
   <!-- Firebase compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* ========== CONFIG FIREBASE ========== */
-// Paste config projectmu (sudah kamu pake sebelumnya)
-const firebaseConfig = {
-  apiKey: "AIzaSyDGPkoewPcjffZ8ORwB3rrVAKiYtRYzuEk",
-  authDomain: "retase-20ec2.firebaseapp.com",
-  projectId: "retase-20ec2",
-  storageBucket: "retase-20ec2.firebasestorage.app",
-  messagingSenderId: "414104675676",
-  appId: "1:414104675676:web:95f0012dadfb1743ff8d99"
-};
+  // --------- Firebase config (pakai milikmu) ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGPkoewPcjffZ8ORwB3rrVAKiYtRYzuEk",
+    authDomain: "retase-20ec2.firebaseapp.com",
+    projectId: "retase-20ec2",
+    storageBucket: "retase-20ec2.firebasestorage.app",
+    messagingSenderId: "414104675676",
+    appId: "1:414104675676:web:95f0012dadfb1743ff8d99"
+  };
 
-/* ========== STATE ========== */
-let db;
-let masterUnits = ["01-F","02-F","03-F","3A-F","05-F","08-P","09-P","10-P","25-P"];
-let masterDrivers = [];
-let sdtData = [];
+  // state
+  let db, masterUnits = [], masterDrivers = [], historyData = [], sdtCount = 0;
 
-/* ========== SAFE INIT (tunggu SDK termuat) ========== */
-function waitForFirebase() {
-  let tries=0;
-  const id = setInterval(()=> {
-    tries++;
-    if(window.firebase && firebase.firestore) {
-      clearInterval(id);
-      try {
-        if(!firebase.apps || firebase.apps.length===0) firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        log('Firebase siap. Subscribe settings & sdt...');
-        subscribeLists();
-        subscribeSdtList();
-      } catch(e) {
-        console.error('init error', e);
-        alert('Gagal inisialisasi Firebase: '+e.message);
+  // Safe init: tunggu SDK ter-load
+  (function waitForFirebase(){
+    let tries=0;
+    const id=setInterval(()=>{
+      tries++;
+      if(window.firebase && firebase.firestore){
+        clearInterval(id);
+        try {
+          if(!firebase.apps || firebase.apps.length===0) firebase.initializeApp(firebaseConfig);
+          db = firebase.firestore();
+          startApp();
+        } catch(e){
+          console.error(e); alert('Gagal inisialisasi Firebase: '+e.message);
+        }
+      } else if(tries>60){
+        clearInterval(id);
+        alert('Firebase SDK gagal dimuat. Buka di Chrome / periksa koneksi.');
       }
-    } else if(tries>60) {
-      clearInterval(id);
-      alert('Firebase SDK gagal dimuat. Buka di Chrome dan periksa koneksi.');
+    },200);
+  })();
+
+  function startApp(){
+    subscribeLists();
+    subscribeSdt();
+    subscribeHistory();
+  }
+
+  // subscribe settings/lists
+  function subscribeLists(){
+    db.doc('settings/lists').onSnapshot(doc=>{
+      if(!doc.exists){ renderUnits([],[]); return; }
+      const d = doc.data()||{};
+      masterUnits = d.masterUnits || [];
+      masterDrivers = d.masterDrivers || [];
+      renderUnits(masterUnits, masterDrivers);
+    }, err => { console.error('lists listen', err); renderUnits([],[]); });
+  }
+
+  function renderUnits(units, drivers){
+    const uEl = document.getElementById('unitButtons'), selUnit=document.getElementById('formUnit'), selDriver=document.getElementById('formDriver');
+    uEl.innerHTML = units.map(u=>`<button class="px-3 py-1 bg-slate-100 rounded text-sm" onclick="quickAdd('${escapeHtml(u)}')">${u}</button>`).join(' ');
+    selUnit.innerHTML = units.map(u=>`<option value="${escapeHtml(u)}">${u}</option>`).join('') || '<option value="">-</option>';
+    selDriver.innerHTML = `<option value="">Driver...</option>` + drivers.map(d=>`<option value="${escapeHtml(d)}">${d}</option>`).join('');
+    document.getElementById('stat-units').innerText = (units||[]).length;
+  }
+
+  // subscribe sdt collection
+  function subscribeSdt(){
+    db.collection('sdt').onSnapshot(snap=>{
+      sdtCount = snap.size;
+      document.getElementById('stat-sdt').innerText = sdtCount;
+    }, err => console.error('sdt listen', err));
+  }
+
+  // subscribe history (latest 50)
+  function subscribeHistory(){
+    db.collection('history').orderBy('ts','desc').limit(50).onSnapshot(snap=>{
+      historyData = [];
+      snap.forEach(d => historyData.push({ id:d.id, ...d.data() }));
+      renderHistory();
+      document.getElementById('stat-history').innerText = historyData.length;
+      if(historyData.length>0){
+        const t = historyData[0].ts && historyData[0].ts.toDate ? historyData[0].ts.toDate() : new Date();
+        document.getElementById('lastUpdated').innerText = t.toLocaleString();
+      }
+    }, err => {
+      console.error('history listen', err);
+      document.getElementById('historyList').innerHTML = '<div class="text-red-500">Gagal memuat history.</div>';
+    });
+  }
+
+  function renderHistory(){
+    const el = document.getElementById('historyList');
+    if(!historyData || historyData.length===0){
+      el.innerHTML = '<div class="text-slate-400 italic">Belum ada history.</div>';
+      return;
     }
-  },200);
-}
-waitForFirebase();
-
-/* ========== HELPERS ========== */
-function log(msg) {
-  const el = document.getElementById('log');
-  el.innerText = (new Date()).toLocaleTimeString() + ' — ' + msg;
-  console.log(msg);
-}
-
-/* ========== SUBSCRIBE settings/lists ========== */
-function subscribeLists() {
-  try {
-    db.doc('settings/lists').onSnapshot(doc => {
-      if(!doc.exists) {
-        log('settings/lists belum ada. Admin harus buat lewat admin.html');
-        renderUnitButtons(); // pakai default jika belum ada
-        return;
-      }
-      const data = doc.data() || {};
-      masterUnits = data.masterUnits || masterUnits;
-      masterDrivers = data.masterDrivers || [];
-      log('settings/lists diterima: ' + (masterUnits.length) + ' units, ' + (masterDrivers.length) + ' drivers');
-      renderUnitButtons();
-    }, err => {
-      console.error('listen lists err', err);
-      log('Error listen lists: ' + err.message);
-    });
-  } catch(e) {
-    console.error('subscribeLists error', e);
+    el.innerHTML = historyData.map(h => {
+      const t = h.ts && h.ts.toDate ? h.ts.toDate().toLocaleString() : '';
+      const by = h.by || 'public';
+      const action = h.action || JSON.stringify(h).slice(0,80);
+      return `<div class="border-b pb-2 pt-2">
+        <div class="text-xs text-slate-400">${t} — <strong>${escapeHtml(by)}</strong></div>
+        <div class="text-sm">${escapeHtml(action)}</div>
+      </div>`;
+    }).join('');
   }
-}
 
-/* ========== RENDER UNIT BUTTONS ========== */
-function renderUnitButtons() {
-  const el = document.getElementById('unitButtons');
-  el.innerHTML = '';
-  (masterUnits || []).forEach(u => {
-    const b = document.createElement('button');
-    b.className = 'px-3 py-1 bg-slate-800 text-white rounded';
-    b.innerText = u;
-    b.onclick = ()=> addSdt(u);
-    el.appendChild(b);
-  });
-}
-
-/* ========== SUBSCRIBE sdt collection ========== */
-function subscribeSdtList() {
-  try {
-    db.collection('sdt').orderBy('createdAt','desc').onSnapshot(snap => {
-      sdtData = [];
-      snap.forEach(d => sdtData.push({ id:d.id, ...d.data() }));
-      renderSdtList();
-      log('sdt updated: ' + sdtData.length + ' items');
-    }, err => {
-      console.error('listen sdt err', err);
-      log('Error listen sdt: ' + err.message);
-    });
-  } catch(e) {
-    console.error('subscribeSdtList error', e);
+  // QUick add from unit button: open form prefilled & scroll
+  function quickAdd(unit){
+    document.getElementById('formUnit').value = unit;
+    scrollToForm();
   }
-}
 
-/* ========== RENDER SDT LIST ========== */
-function renderSdtList() {
-  const c = document.getElementById('sdtList');
-  const m = document.getElementById('emptyMsg');
-  if(!sdtData || sdtData.length===0) { c.innerHTML=''; m.style.display='block'; return; }
-  m.style.display='none';
-  c.innerHTML = sdtData.map((d,i)=> {
-    const driver = d.driver || '';
-    const trip = d.trip || 0;
-    const ket = d.ket || '';
-    const driverOpts = (masterDrivers || []).map(dd => `<option ${dd===driver?'selected':''}>${dd}</option>`).join('');
-    return `
-      <div class="p-3 mb-2 bg-[#07101a] rounded grid grid-cols-12 gap-2 items-center">
-        <div class="col-span-2 font-bold">${d.unit}</div>
-        <div class="col-span-4"><select onchange="updSdt(${i},'driver',this.value)" class="w-full p-1 rounded bg-black border border-slate-700">${driverOpts}</select></div>
-        <div class="col-span-2"><input type="number" value="${trip}" onchange="updSdt(${i},'trip',this.value)" class="w-full p-1 rounded bg-black border border-slate-700 text-center"></div>
-        <div class="col-span-3"><input value="${ket}" onchange="updSdt(${i},'ket',this.value)" class="w-full p-1 rounded bg-black border border-slate-700"></div>
-        <div class="col-span-1 text-right"><button onclick="delSdt(${i})" class="text-red-400">Hapus</button></div>
-      </div>
-    `;
-  }).join('');
-}
+  // form submit: create sdt doc & history
+  function submitForm(){
+    const unit = document.getElementById('formUnit').value || '';
+    const driver = document.getElementById('formDriver').value || '';
+    const trip = parseInt(document.getElementById('formTrip').value) || 0;
+    const sd = document.getElementById('formSd').value || '';
+    const ket = document.getElementById('formKet').value || '';
 
-/* ========== CRUD SDT (public) ========== */
-function addSdt(unit) {
-  if(!db) { alert('Database belum siap'); return; }
-  const doc = { unit, driver:'', trip:0, ket:'', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-  db.collection('sdt').add(doc)
-    .then(()=> {
-      // log history
-      db.collection('history').add({ action:'addSdt', unit, by:'public', ts: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
-      log('SDT ditambahkan: ' + unit);
-    })
-    .catch(e => {
-      console.error('addSdt', e);
-      alert('Gagal menambah SDT: ' + e.message);
-    });
-}
+    if(!unit){ showFormMsg('Pilih unit terlebih dahulu','red'); return; }
 
-function delSdt(i) {
-  const id = sdtData[i]?.id; if(!id) return;
-  db.collection('sdt').doc(id).delete()
-    .then(()=> {
-      db.collection('history').add({ action:'delSdt', id, by:'public', ts: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
-      log('SDT dihapus: ' + id);
-    })
-    .catch(e => { console.error(e); alert('Gagal hapus: ' + e.message); });
-}
+    const doc = { unit, driver, trip, sd, ket, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
 
-function updSdt(i, field, value) {
-  const id = sdtData[i]?.id; if(!id) return;
-  const payload = {};
-  payload[field] = (field==='trip') ? parseInt(value)||0 : value;
-  db.collection('sdt').doc(id).set(payload, { merge:true })
-    .then(()=> {
-      db.collection('history').add({ action:'updSdt', id, field, value: payload[field], by:'public', ts: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
-      log('SDT updated: ' + id + ' ' + field + '=' + payload[field]);
-    })
-    .catch(e => { console.error(e); alert('Gagal update: ' + e.message); });
-}
+    db.collection('sdt').add(doc)
+      .then(ref => {
+        // history entry
+        db.collection('history').add({ action: `create SDT ${unit} ${trip} Trip`, by:'public', ts: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+        showFormMsg('Berhasil dikirim', 'green');
+        document.getElementById('sdtForm').reset();
+      })
+      .catch(err => {
+        console.error('submitForm', err);
+        showFormMsg('Gagal: ' + err.message, 'red');
+      });
+  }
 
-/* ========== UTILS ========== */
-function refreshNow() {
-  subscribeLists();
-  subscribeSdtList();
-}
+  function showFormMsg(txt, color='slate'){
+    const el = document.getElementById('formMsg');
+    el.innerText = txt;
+    el.style.color = (color==='green'?'#059669':(color==='red'?'#DC2626':'#64748b'));
+    setTimeout(()=>{ el.innerText=''; }, 4000);
+  }
+
+  function resetForm(){
+    document.getElementById('sdtForm').reset();
+  }
+
+  function scrollToForm(){
+    document.getElementById('formSection').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function clearHistoryView(){ subscribeHistory(); }
+
+  // small helper to escape
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 </script>
 </body>
