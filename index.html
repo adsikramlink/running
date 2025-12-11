@@ -919,5 +919,102 @@ window.onload = async ()=>{
 };
 </script>
 
+
+
+<script>
+/*
+  Fix kecil untuk:
+  - icon lucide tidak tampil
+  - tombol + (FAB) dan tombol Admin tidak merespon klik
+  - hilangkan overlay/loader yang tidak sengaja menutupi UI
+  Paste di paling bawah index.html sebelum </body>
+*/
+
+(function(){
+  // 1) pastikan lucide siap & render ulang ikon saat load
+  function renderIconsSafe(){
+    try { if(window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); }
+    catch(e){ console.warn("lucide createIcons error:", e); }
+  }
+  window.addEventListener('load', () => {
+    // delay sedikit agar semua element siap
+    setTimeout(() => {
+      renderIconsSafe();
+      // 2) lepas overlay atau loader yang mungkin menutupi seluruh layar
+      document.querySelectorAll('#loader, .overlay, .modal-backdrop, .backdrop').forEach(el=>{
+        try{ el.style.display='none'; el.remove(); }catch(e){}
+      });
+
+      // 3) pastikan body dan tombol dapat menerima event klik
+      try {
+        document.body.style.pointerEvents = 'auto';
+        document.querySelectorAll('button, a, input').forEach(el=>{
+          el.style.pointerEvents = 'auto';
+        });
+      } catch(e){ console.warn(e); }
+
+      // 4) fallback: jika tombol admin (gear) ada tapi onclick inline tidak bekerja,
+      //    re-attach handler ke tombol yang mengandung navTo('admin')
+      try {
+        // cari tombol admin & fab yang menggunakan navTo('admin') dan navTo('form')
+        const adminBtn = Array.from(document.querySelectorAll('button')).find(b=>{
+          const oc = b.getAttribute('onclick')||'';
+          return oc.includes("navTo('admin')") || oc.includes('navTo("admin")');
+        });
+        const fabBtn = Array.from(document.querySelectorAll('button')).find(b=>{
+          const oc = b.getAttribute('onclick')||'';
+          return oc.includes("navTo('form')") || oc.includes('navTo(\"form\")') || b.className.includes('fixed') && b.textContent.trim()==='+';
+        });
+
+        if(adminBtn && !adminBtn.__fixed) {
+          adminBtn.addEventListener('click', (ev)=>{
+            try { window.navTo && window.navTo('admin'); }
+            catch(err){ console.error('navTo admin error', err); }
+          });
+          adminBtn.__fixed = true;
+        }
+
+        if(fabBtn && !fabBtn.__fixed) {
+          fabBtn.addEventListener('click', (ev)=>{
+            try { window.navTo && window.navTo('form'); }
+            catch(err){ console.error('navTo form error', err); }
+          });
+          fabBtn.__fixed = true;
+        }
+      } catch(e){ console.warn("attach fallback handlers:", e); }
+
+      // 5) debug tip: log elemen penting (lihat console)
+      try {
+        console.info("DEBUG UI:", {
+          adminBtn: !!document.querySelector('button[onclick*=\"navTo(\\'admin\\')\"]'),
+          fab: !!document.querySelector('button[onclick*=\"navTo(\\'form\\')\"]') || !!document.querySelector('button.fixed'),
+          lucide: !!window.lucide
+        });
+      } catch(e){}
+    }, 120);
+  });
+
+  // 6) juga jalankan sekali saat script dipaste (untuk hot-reload dev)
+  setTimeout(() => { renderIconsSafe(); }, 250);
+
+  // Helpful function: coba klik tombol lewat console untuk test
+  window.__test_click_nav = function(target){
+    try {
+      if(target === 'admin') {
+        const b = document.querySelector('button[onclick*="navTo(\'admin\')"]') || document.querySelector('button[aria-label="admin"]');
+        if(b){ b.click(); console.log('admin btn clicked'); return true; }
+      }
+      if(target === 'form') {
+        const b = document.querySelector('button[onclick*="navTo(\'form\')"]') || document.querySelector('button.fixed');
+        if(b){ b.click(); console.log('fab clicked'); return true; }
+      }
+    } catch(e){ console.warn(e); }
+    return false;
+  };
+
+})();
+</script>
+
+
 </body>
 </html>
