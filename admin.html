@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Efektivitas Running</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4">
+  <h1 class="text-xl font-bold mb-4">Admin Panel</h1>
+  <button onclick="doLogin()" class="bg-amber-500 px-3 py-1 rounded">Login Admin</button>
+  <a href="index.html" class="ml-2 text-sm text-indigo-600">Kembali ke Input</a>
+
+  <div id="adminArea" class="mt-4 hidden">
+    <div id="configPanel"></div>
+    <div class="mt-4">
+      <button onclick="saveAll()" class="bg-green-600 text-white px-3 py-1 rounded">Simpan Semua</button>
+    </div>
+    <h2 class="mt-6 font-bold">History (terbaru)</h2>
+    <div id="histList" class="mt-2"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
+
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaS... (sama)",
+    authDomain: "retase-20ec2.firebaseapp.com",
+    projectId: "retase-20ec2",
+    storageBucket: "retase-20ec2.firebasestorage.app",
+    messagingSenderId: "414104675676",
+    appId: "1:414104675676:web:95f0012dadfb1743ff8d99"
+  };
+
+  // init
+  function init() {
+    let tries=0; const max=60;
+    const id=setInterval(()=>{
+      tries++;
+      if(window.firebase && firebase.firestore) {
+        clearInterval(id);
+        if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        window.db = firebase.firestore();
+        loadLists();
+        loadHistory();
+      } else if(tries>=max) { clearInterval(id); alert('Firebase gagal dimuat'); }
+    },200);
+  }
+  init();
+
+  const ADMIN_PW = 'admin';
+  let isAdmin=false;
+  let lists = { supervisors:[], foremen:[], checkers:[], pts:[], sds:[], masterUnits:[], masterDrivers:[] };
+
+  function doLogin(){
+    const pw = prompt('Password admin:');
+    if(pw===ADMIN_PW){ isAdmin=true; document.getElementById('adminArea').classList.remove('hidden'); alert('Login OK'); }
+    else alert('Password salah');
+  }
+
+  function loadLists(){
+    db.doc('settings/lists').get().then(doc=>{
+      if(doc.exists) lists = {...lists, ...doc.data()};
+      renderEditLists();
+    }).catch(e=>console.error(e));
+  }
+
+  function renderEditLists(){
+    const cp = document.getElementById('configPanel');
+    cp.innerHTML = '';
+    Object.keys(lists).forEach(key=>{
+      const arr = lists[key] || [];
+      const box = document.createElement('div');
+      box.className='p-2 border rounded mb-2 bg-white';
+      let inner = `<div class="flex justify-between items-center"><strong>${key}</strong><span>${arr.length} item</span></div>`;
+      inner += `<div class="flex flex-wrap gap-2 mt-2">`;
+      arr.forEach((v,i)=> inner += `<div class="px-2 py-1 bg-slate-100 rounded">${v} <button onclick="removeItem('${key}',${i})" class="text-red-500 ml-1">×</button></div>`);
+      inner += `</div>`;
+      inner += `<div class="mt-2"><input id="inp-${key}" placeholder="Tambah ${key}" class="border p-1 mr-2"><button onclick="addItem('${key}')" class="bg-indigo-600 text-white px-2 py-1 rounded">Tambah</button></div>`;
+      box.innerHTML = inner;
+      cp.appendChild(box);
+    });
+  }
+
+  function addItem(key){
+    const v = document.getElementById('inp-'+key).value.trim();
+    if(!v) return;
+    lists[key] = lists[key] || []; lists[key].push(v);
+    document.getElementById('inp-'+key).value='';
+    renderEditLists();
+  }
+  function removeItem(key,i){ lists[key].splice(i,1); renderEditLists(); }
+
+  function saveAll(){
+    if(!isAdmin){ alert('Login dulu'); return; }
+    db.doc('settings/lists').set(lists, { merge:true }).then(()=>{
+      db.collection('history').add({ action:'saveLists', data:lists, by:'admin', ts: firebase.firestore.FieldValue.serverTimestamp() });
+      alert('Tersimpan');
+    }).catch(e=>{ console.error(e); alert('Gagal simpan');});
+  }
+
+  function loadHistory(){
+    db.collection('history').orderBy('ts','desc').limit(50).onSnapshot(snap=>{
+      const el = document.getElementById('histList'); el.innerHTML='';
+      snap.forEach(d=>{
+        const it = d.data();
+        const time = it.ts && it.ts.toDate? it.ts.toDate().toLocaleString() : '';
+        const div = document.createElement('div'); div.className='p-2 border-b';
+        div.innerHTML = `<div class="text-xs text-slate-500">${time} — <strong>${it.action}</strong> by ${it.by||'-'}</div><div class="text-sm">${JSON.stringify(it.data||it)}</div>`;
+        el.appendChild(div);
+      });
+    });
+  }
+  </script>
+</body>
+</html>
