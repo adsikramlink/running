@@ -1,502 +1,145 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Efektivitas Running - Firestore (All-in-one)</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Efektivitas Running - Input</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background:#f1f5f9; color:#1e293b; }
-    .input-base{width:100%;background:white;border:1px solid #cbd5e1;border-radius:6px;padding:8px;font-weight:600;outline:none;transition:.2s}
-    .input-base:focus{border-color:#4f46e5;box-shadow:0 0 0 2px rgba(79,70,229,.1)}
-    .time-digit{width:32px;text-align:center;border:none;outline:none;font-weight:700;background:transparent}
-    .time-box{display:flex;align-items:center;justify-content:center;gap:2px;background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px}
-    .table-input{width:100%;text-align:center;background:transparent;border:none;border-bottom:2px solid #e2e8f0;font-weight:700;padding:4px;outline:none}
-    .table-input:focus{border-bottom-color:#4f46e5;background:#f8fafc}
-    .chip-label input:checked + div{background:#4f46e5;color:#fff;border-color:#4f46e5}
-    .chip-div{padding:4px 10px;border-radius:99px;border:1px solid #cbd5e1;background:white;color:#64748b;font-size:11px;font-weight:700;cursor:pointer}
-    .tab-btn{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;color:#64748b}
-    .tab-btn.active{background:white;color:#1e293b;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-    #copyPageBtn{position:fixed;right:14px;top:74px;z-index:60;background:#0ea5a4;color:white;padding:8px 10px;border-radius:10px;font-weight:700;font-size:12px;box-shadow:0 6px 18px rgba(2,6,23,.2)}
-  </style>
+  <style>body{font-family:Inter,system-ui,...}/* singkatkan css */</style>
 </head>
-<body class="pb-32">
-  <button id="copyPageBtn" onclick="copyFullHTML()" title="Salin seluruh kode HTML halaman">Salin Kode Halaman</button>
-
-  <div class="bg-slate-900 text-white py-4 px-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-    <div>
-      <h1 class="text-lg font-bold">Efektivitas Running</h1>
-      <p class="text-slate-400 text-[10px]">Dashboard v3.0 Final</p>
+<body class="pb-24">
+  <div class="p-4 max-w-3xl mx-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-bold">Efektivitas Running (Input)</h1>
+      <div class="flex gap-2">
+        <a href="admin.html" class="bg-slate-200 px-3 py-1 rounded text-sm">Admin</a>
+      </div>
     </div>
-    <div class="flex items-center gap-2">
-      <button id="unlockBtn" onclick="promptAdmin()" class="bg-amber-500 hover:bg-amber-600 text-xs font-bold py-2 px-3 rounded">Unlock (admin)</button>
-      <button onclick="window.scrollTo(0, document.body.scrollHeight)" class="bg-indigo-600 hover:bg-indigo-700 text-xs font-bold py-2 px-3 rounded">↓ Bawah</button>
+
+    <!-- minimal form area (pakai desainmu sebelumnya) -->
+    <div id="unitButtons" class="mb-4"></div>
+
+    <div id="sdtList" class="space-y-2"></div>
+    <div id="emptyMsg" class="text-center py-8 italic text-slate-400">Belum ada data. Klik tombol unit di atas.</div>
+
+    <div class="mt-6">
+      <button onclick="refreshNow()" class="bg-indigo-600 text-white px-4 py-2 rounded">Refresh</button>
     </div>
   </div>
 
-  <div class="max-w-3xl mx-auto px-4 mt-6 space-y-6">
-
-    <!-- 0 DATA -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-sm">0. Data Operasional</div>
-      <div class="p-4 space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Shift</label><select id="inputShift" class="input-base"><option value="NIGHT SHIFT">🌙 NIGHT SHIFT</option><option value="DAY SHIFT">☀️ DAY SHIFT</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Tanggal</label><input type="date" id="inputTanggal" class="input-base"></div>
-        </div>
-        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Supervisor</label><div id="spvContainer" class="flex flex-wrap gap-2 mb-2"></div><input id="inputSupervisorLainnya" placeholder="+ Manual" class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500"></div>
-        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Foreman</label><div id="foremanContainer" class="flex flex-wrap gap-2 mb-2"></div><input id="inputForemanLainnya" placeholder="+ Manual" class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500"></div>
-        <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Checker</label><div id="checkerContainer" class="flex flex-wrap gap-2 mb-2"></div><input id="inputCheckerLainnya" placeholder="+ Manual" class="text-sm w-full border-b py-1 outline-none focus:border-indigo-500"></div>
-        <div class="grid grid-cols-2 gap-4 pt-2">
-          <div class="bg-blue-50 p-3 rounded border border-blue-100"><label class="text-[10px] font-bold text-blue-600 block">TIPPING ROM</label><input type="number" id="inputTippingRom" placeholder="0" class="w-full bg-transparent text-xl font-black text-blue-900 outline-none"></div>
-          <div class="bg-emerald-50 p-3 rounded border border-emerald-100"><label class="text-[10px] font-bold text-emerald-600 block">TRANSFER ROM</label><input type="number" id="inputTransferRom" placeholder="0" class="w-full bg-transparent text-xl font-black text-emerald-900 outline-none"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CONVEYOR -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-        <div><h2 class="font-bold text-slate-700 text-sm">1. Durasi Conveyor</h2><p class="text-[10px] text-slate-400">Hitung Waktu Indikasi</p></div>
-        <div class="flex bg-slate-200 p-1 rounded-md"><button onclick="switchTab('SD1')" id="tab-SD1" class="tab-btn active">SD1</button><button onclick="switchTab('SD2')" id="tab-SD2" class="tab-btn">SD2</button><button onclick="switchTab('SD3')" id="tab-SD3" class="tab-btn">SD3</button></div>
-      </div>
-      <div class="p-4">
-        <div class="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 text-center mb-2"><div class="col-span-1">#</div><div class="col-span-5">Mulai</div><div class="col-span-5">Selesai</div><div class="col-span-1">Del</div></div>
-        <div id="container-SD1" class="space-y-2"></div><div id="container-SD2" class="space-y-2 hidden"></div><div id="container-SD3" class="space-y-2 hidden"></div>
-        <button onclick="addTimeRow(activeSD)" class="mt-4 w-full py-3 border border-dashed border-slate-300 text-slate-500 font-bold text-xs rounded hover:bg-slate-50">+ Tambah Baris</button>
-        <div id="results" class="mt-6 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4">
-          <div class="bg-slate-50 p-2 rounded text-center border border-slate-200"><div class="text-[10px] text-slate-400 font-bold">SD1 Indikasi</div><div id="res-SD1" class="text-sm font-black text-slate-800">0j 0m</div><div id="eff-SD1" class="text-[10px] font-bold text-emerald-600">12j 0m</div></div>
-          <div class="bg-slate-50 p-2 rounded text-center border border-slate-200"><div class="text-[10px] text-slate-400 font-bold">SD2 Indikasi</div><div id="res-SD2" class="text-sm font-black text-slate-800">0j 0m</div><div id="eff-SD2" class="text-[10px] font-bold text-emerald-600">12j 0m</div></div>
-          <div class="bg-slate-50 p-2 rounded text-center border border-slate-200"><div class="text-[10px] text-slate-400 font-bold">SD3 Indikasi</div><div id="res-SD3" class="text-sm font-black text-slate-800">0j 0m</div><div id="eff-SD3" class="text-[10px] font-bold text-emerald-600">12j 0m</div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- UNIT RUNNING -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 font-bold text-slate-700 text-sm">2. Perhitungan Unit Running</div>
-      <div class="p-4 space-y-6">
-        <!-- MHA -->
-        <div><div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-orange-500"></div><span class="text-xs font-bold text-slate-700">MHA</span></div><div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs"><div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200"><div class="col-span-2">SHIFT</div><div class="col-span-4">UNIT</div><div class="col-span-4">TRIP</div><div class="col-span-2">HASIL</div></div><div class="grid grid-cols-12 py-1 items-center border-b border-slate-100"><div class="col-span-2">☀️</div><div class="col-span-4 px-1"><input type="number" id="mha-run-siang" class="table-input" placeholder="0" oninput="calcUnit('mha')"></div><div class="col-span-4 px-1"><input type="number" id="mha-trip-siang" class="table-input" placeholder="0" oninput="calcUnit('mha')"></div><div class="col-span-2 font-black" id="mha-res-siang">0</div></div><div class="grid grid-cols-12 py-1 items-center bg-slate-50/50"><div class="col-span-2">🌙</div><div class="col-span-4 px-1"><input type="number" id="mha-run-malam" class="table-input" placeholder="0" oninput="calcUnit('mha')"></div><div class="col-span-4 px-1"><input type="number" id="mha-trip-malam" class="table-input" placeholder="0" oninput="calcUnit('mha')"></div><div class="col-span-2 font-black" id="mha-res-malam">0</div></div></div></div>
-        <!-- KARUNIA -->
-        <div><div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-xs font-bold text-slate-700">KARUNIA</span></div><div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs"><div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200"><div class="col-span-2">SHIFT</div><div class="col-span-4">UNIT</div><div class="col-span-4">TRIP</div><div class="col-span-2">HASIL</div></div><div class="grid grid-cols-12 py-1 items-center border-b border-slate-100"><div class="col-span-2">☀️</div><div class="col-span-4 px-1"><input type="number" id="kai-run-siang" class="table-input" placeholder="0" oninput="calcUnit('kai')"></div><div class="col-span-4 px-1"><input type="number" id="kai-trip-siang" class="table-input" placeholder="0" oninput="calcUnit('kai')"></div><div class="col-span-2 font-black" id="kai-res-siang">0</div></div><div class="grid grid-cols-12 py-1 items-center bg-slate-50/50"><div class="col-span-2">🌙</div><div class="col-span-4 px-1"><input type="number" id="kai-run-malam" class="table-input" placeholder="0" oninput="calcUnit('kai')"></div><div class="col-span-4 px-1"><input type="number" id="kai-trip-malam" class="table-input" placeholder="0" oninput="calcUnit('kai')"></div><div class="col-span-2 font-black" id="kai-res-malam">0</div></div></div></div>
-        <!-- BUMA -->
-        <div><div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-yellow-500"></div><span class="text-xs font-bold text-slate-700">BUMA</span></div><div class="border border-slate-200 rounded-lg overflow-hidden text-center text-xs"><div class="grid grid-cols-12 bg-slate-50 font-bold text-slate-400 py-2 border-b border-slate-200"><div class="col-span-2">SHIFT</div><div class="col-span-4">UNIT</div><div class="col-span-4">TRIP</div><div class="col-span-2">HASIL</div></div><div class="grid grid-cols-12 py-1 items-center border-b border-slate-100"><div class="col-span-2">☀️</div><div class="col-span-4 px-1"><input type="number" id="buma-run-siang" class="table-input" placeholder="0" oninput="calcUnit('buma')"></div><div class="col-span-4 px-1"><input type="number" id="buma-trip-siang" class="table-input" placeholder="0" oninput="calcUnit('buma')"></div><div class="col-span-2 font-black" id="buma-res-siang">0</div></div><div class="grid grid-cols-12 py-1 items-center bg-slate-50/50"><div class="col-span-2">🌙</div><div class="col-span-4 px-1"><input type="number" id="buma-run-malam" class="table-input" placeholder="0" oninput="calcUnit('buma')"></div><div class="col-span-4 px-1"><input type="number" id="buma-trip-malam" class="table-input" placeholder="0" oninput="calcUnit('buma')"></div><div class="col-span-2 font-black" id="buma-res-malam">0</div></div></div></div>
-
-        <div class="bg-slate-100 p-3 rounded flex justify-between items-center text-sm"><span class="font-bold text-slate-500">Total Hauling</span><span id="grand-total" class="font-black text-indigo-700 text-lg">0</span></div>
-      </div>
-    </section>
-
-    <!-- SDT -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-        <h2 class="font-bold text-slate-700 text-sm">3. Unit SDT Running</h2>
-        <button onclick="toggleConfig()" class="text-[10px] text-blue-600 underline font-bold">Config</button>
-      </div>
-      <div class="p-4">
-        <div id="configPanel" class="hidden bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs mb-4">
-          <!-- dynamic content akan diisi oleh renderConfigLists() -->
-          <div class="text-xs text-slate-500 italic">Config: tambah/hapus Supervisor, Foreman, Checker, PT, SD, Unit, Driver</div>
-        </div>
-
-        <div class="mb-4"><div id="unitBtnContainer" class="flex flex-wrap gap-2"></div></div>
-
-        <div id="sdtList" class="space-y-3"></div>
-        <div id="emptyMsg" class="text-center py-6 text-slate-300 text-xs italic border border-dashed rounded mt-2">Belum ada data. Klik tombol unit di atas.</div>
-      </div>
-    </section>
-
-    <div class="grid grid-cols-2 gap-3">
-      <button onclick="copyReport(false)" class="bg-white border border-purple-200 text-purple-700 font-bold py-3 rounded-xl shadow-sm hover:bg-purple-50 text-xs">Salin SIANG</button>
-      <button onclick="copyReport(true)" class="bg-white border border-indigo-200 text-indigo-700 font-bold py-3 rounded-xl shadow-sm hover:bg-indigo-50 text-xs">Salin MALAM</button>
-    </div>
-
-  </div>
-
-  <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded shadow-xl text-xs hidden transition-all duration-300 transform translate-y-10">Teks berhasil disalin!</div>
-
-  <!-- Firebase compat SDKs -->
+  <!-- Firebase compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ===== FIREBASE CONFIG (pakai config projectmu) =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDGPkoewPcjffZ8ORwB3rrVAKiYtRYzuEk",
-      authDomain: "retase-20ec2.firebaseapp.com",
-      projectId: "retase-20ec2",
-      storageBucket: "retase-20ec2.firebasestorage.app",
-      messagingSenderId: "414104675676",
-      appId: "1:414104675676:web:95f0012dadfb1743ff8d99",
-      measurementId: "G-64RN0GNMPW"
-    };
-    // jangan inisialisasi langsung di sini; tunggu SDK dimuat
-  </script>
+  // --- PASTE FIREBASE CONFIG DI SINI (gunakan config project-mu) ---
+  const firebaseConfig = {
+    apiKey: "AIzaS... (dari project)",
+    authDomain: "retase-20ec2.firebaseapp.com",
+    projectId: "retase-20ec2",
+    storageBucket: "retase-20ec2.firebasestorage.app",
+    messagingSenderId: "414104675676",
+    appId: "1:414104675676:web:95f0012dadfb1743ff8d99"
+  };
 
-  <script>
-    // --- App data & defaults ---
-    const SPV = ['Ihsan R', 'Dicky F', 'Sopian'];
-    const FRM = ['Gunawan TC', 'Hardiansyah', 'Lewi S', 'Elimelek J', 'Andry K', 'Yulius R'];
-    const CHK = ['Indra R', 'Jemmie P', 'Ikram', 'Fahri T', 'Indra A', 'Andhy S', 'Agus', 'Angga', 'Henderi A', 'L Fauzan N', 'Nanda P'];
+  // safe init (tunggu SDK)
+  function initFirebaseAndStart() {
+    let tries = 0;
+    const max = 60;
+    const t = setInterval(()=> {
+      tries++;
+      if(window.firebase && firebase.firestore) {
+        clearInterval(t);
+        if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        window.db = firebase.firestore();
+        startApp();
+      } else if(tries>=max) {
+        clearInterval(t);
+        alert('Firebase SDK gagal dimuat. Periksa koneksi atau buka di Chrome.');
+      }
+    }, 200);
+  }
+  initFirebaseAndStart();
 
-    let activeSD = 'SD1';
-    let conveyorData = { SD1:[], SD2:[], SD3:[] };
-    let sdtData = [];
-    let masterUnits = ["01-F", "02-F", "03-F", "3A-F", "05-F", "08-P", "09-P", "10-P", "25-P"];
-    let masterDrivers = ["Jeksen", "Saipul", "Julio", "Ardianur", "Suryadi", "Agung", "Faturahman"];
+  // application logic
+  let masterUnits = ["01-F","02-F","03-F","3A-F","05-F","08-P","09-P","10-P","25-P"];
+  let masterDrivers = [];
+  let sdtData = [];
 
-    // lists (will be populated from Firestore)
-    window.supervisors = SPV.slice();
-    window.foremen = FRM.slice();
-    window.checkers = CHK.slice();
-    window.pts = [];
-    window.sds = ['SD1','SD2','SD3'];
+  function startApp() {
+    subscribeLists();
+    subscribeSdtList();
+  }
 
-    // admin gate
-    let isAdmin = false;
-    const DEV_ADMIN_PASSWORD = 'admin';
-
-    // --- DOM init on load (only UI local scaffolding) ---
-    window.onload = () => {
-      initChips('spvContainer', window.supervisors);
-      initChips('foremanContainer', window.foremen);
-      initChips('checkerContainer', window.checkers);
+  // subscribe settings/lists doc
+  function subscribeLists() {
+    db.doc('settings/lists').onSnapshot(doc => {
+      if(!doc.exists) return;
+      const data = doc.data();
+      masterUnits = data.masterUnits || masterUnits;
+      masterDrivers = data.masterDrivers || [];
       renderUnitButtons();
-      addTimeRow('SD1'); addTimeRow('SD1'); addTimeRow('SD2'); addTimeRow('SD3');
-      document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
-      lucide.createIcons();
-    };
+    }, err => console.error(err));
+  }
 
-    // basic UI funcs
-    function initChips(id, list) {
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.innerHTML = list.map(n => `<label class="chip-label inline-block mr-2 mb-1"><input type="checkbox" value="${n}" class="hidden"><div class="chip-div">${n}</div></label>`).join('');
-    }
-    function switchTab(sd) {
-      activeSD = sd;
-      ['SD1','SD2','SD3'].forEach(n => {
-        document.getElementById(`tab-${n}`).className = `tab-btn ${n===sd?'active':''}`;
-        document.getElementById(`container-${n}`).className = `space-y-2 ${n===sd?'':'hidden'}`;
-      });
-    }
+  function renderUnitButtons() {
+    const el = document.getElementById('unitButtons');
+    el.innerHTML = masterUnits.map(u => `<button onclick="addSdt('${u}')" class="border px-2 py-1 mr-2 mb-2 rounded">${u}</button>`).join('');
+  }
 
-    // time rows
-    function addTimeRow(sd) {
-      const idx = conveyorData[sd].length;
-      conveyorData[sd].push({ sh:'', sm:'', fh:'', fm:'' });
-      const div = document.createElement('div');
-      div.id = `row-${sd}-${idx}`;
-      div.className = "grid grid-cols-12 gap-2 items-center bg-white p-2 rounded border border-slate-100 shadow-sm";
-      div.innerHTML = `
-        <div class="col-span-1 text-center font-bold text-slate-300 text-xs">${idx+1}</div>
-        <div class="col-span-5 time-box"><input type="tel" maxlength="2" placeholder="HH" class="time-digit" oninput="updTime('${sd}',${idx},'sh',this)">:<input type="tel" maxlength="2" placeholder="MM" class="time-digit" oninput="updTime('${sd}',${idx},'sm',this)"></div>
-        <div class="col-span-5 time-box"><input type="tel" maxlength="2" placeholder="HH" class="time-digit" oninput="updTime('${sd}',${idx},'fh',this)">:<input type="tel" maxlength="2" placeholder="MM" class="time-digit" oninput="updTime('${sd}',${idx},'fm',this)"></div>
-        <div class="col-span-1 text-center"><button onclick="delTimeRow('${sd}',${idx})" class="text-slate-300 hover:text-red-500 font-bold">×</button></div>
-      `;
-      document.getElementById(`container-${sd}`).appendChild(div);
-    }
-    function updTime(sd, idx, f, el) {
-      let v = el.value.replace(/\D/g,''); if(v.length>2) v=v.slice(0,2);
-      if(v>23 && (f=='sh'||f=='fh')) v='23'; if(v>59 && (f=='sm'||f=='fm')) v='59';
-      el.value=v; conveyorData[sd][idx][f]=v; calcConv(sd);
-      if(v.length==2) { let n=el.nextElementSibling; if(n&&n.tagName=='INPUT') n.focus(); }
-    }
-    function delTimeRow(sd, idx) {
-      const el = document.getElementById(`row-${sd}-${idx}`); if(el) el.style.display='none';
-      conveyorData[sd][idx] = { sh:'', sm:'', fh:'', fm:'' }; calcConv(sd);
-    }
-    function calcConv(sd) {
-      let tot=0;
-      conveyorData[sd].forEach(d => {
-        if(d.sh!==''&&d.sm!==''&&d.fh!==''&&d.fm!=='') {
-          let s = parseInt(d.sh)*60+parseInt(d.sm), f = parseInt(d.fh)*60+parseInt(d.fm);
-          if(f<s) f+=1440; tot += (f-s);
-        }
-      });
-      const th=Math.floor(tot/60), tm=tot%60;
-      document.getElementById(`res-${sd}`).innerText = `${th}j ${tm}m`;
-      let rem = (12*60)-tot;
-      const rh=Math.floor(Math.abs(rem)/60), rm=Math.abs(rem)%60;
-      const el=document.getElementById(`eff-${sd}`);
-      if(tot===0) { el.innerText='-'; el.className="text-[10px] font-bold text-slate-300"; el.dataset.copy='-'; }
-      else if(rem>=0) { el.innerText=`${rh}j ${rm}m`; el.className="text-[10px] font-bold text-emerald-600"; el.dataset.copy=`${rh} Jam ${String(rm).padStart(2,'0')} Menit`; }
-      else { el.innerText=`${rh}j ${rm}m (Over)`; el.className="text-[10px] font-bold text-red-600"; el.dataset.copy=`${rh} Jam ${String(rm).padStart(2,'0')} Menit (Kelebihan Durasi)`; }
-    }
-    function calcUnit(id) {
-      const val = (s) => parseFloat(document.getElementById(s).value)||0;
-      const rs=val(`${id}-run-siang`), ts=val(`${id}-trip-siang`), rm=val(`${id}-run-malam`), tm=val(`${id}-trip-malam`);
-      document.getElementById(`${id}-res-siang`).innerText = (ts-rs);
-      document.getElementById(`${id}-res-malam`).innerText = ((tm-ts)-rm);
-      let tot=0; ['mha','kai','buma'].forEach(k => tot += (val(`${k}-trip-malam`)-val(`${k}-trip-siang`)));
-      document.getElementById('grand-total').innerText = tot + " Trip";
-    }
+  // subscribe sdt
+  function subscribeSdtList() {
+    db.collection('sdt').orderBy('createdAt').onSnapshot(snap => {
+      sdtData = [];
+      snap.forEach(d => sdtData.push({ id:d.id, ...d.data() }));
+      renderSdtList();
+    }, err => console.error(err));
+  }
 
-    // ---------------- Firestore lists & SDT ----------------
-    const LISTS_DOC = 'settings/lists';
+  function renderSdtList() {
+    const c = document.getElementById('sdtList');
+    const m = document.getElementById('emptyMsg');
+    if(sdtData.length===0) { c.innerHTML=''; m.style.display='block'; return;}
+    m.style.display='none';
+    c.innerHTML = sdtData.map((d,i)=> {
+      const drvOpts = `<select onchange="updSdt(${i},'driver',this.value)"><option value="">-</option>` + (masterDrivers||[]).map(dd=>`<option ${dd===d.driver?'selected':''}>${dd}</option>`).join('') + '</select>';
+      return `<div class="p-3 border rounded flex gap-2 items-center">
+        <div class="w-24 font-bold">${d.unit}</div>
+        <div>${drvOpts}</div>
+        <div><input type="number" value="${d.trip||0}" onchange="updSdt(${i},'trip',this.value)" style="width:80px"></div>
+        <div><input value="${d.ket||''}" onchange="updSdt(${i},'ket',this.value)"></div>
+        <div><button onclick="delSdt(${i})" style="color:red">Hapus</button></div>
+      </div>`;
+    }).join('');
+  }
 
-    function subscribeLists() {
-      try {
-        db.doc(LISTS_DOC).onSnapshot(doc => {
-          if(!doc.exists) {
-            if(isAdmin) {
-              const defaultData = {
-                supervisors: window.supervisors,
-                foremen: window.foremen,
-                checkers: window.checkers,
-                pts: window.pts,
-                sds: window.sds,
-                masterUnits: masterUnits,
-                masterDrivers: masterDrivers
-              };
-              db.doc(LISTS_DOC).set(defaultData).catch(()=>{});
-            }
-            return;
-          }
-          const data = doc.data();
-          masterUnits = data.masterUnits || masterUnits;
-          masterDrivers = data.masterDrivers || masterDrivers;
-          window.supervisors = data.supervisors || window.supervisors;
-          window.foremen = data.foremen || window.foremen;
-          window.checkers = data.checkers || window.checkers;
-          window.pts = data.pts || window.pts;
-          window.sds = data.sds || window.sds;
-          renderConfigLists();
-          renderUnitButtons();
-          renderSdtList();
-          // update chips for operation section
-          initChips('spvContainer', window.supervisors);
-          initChips('foremanContainer', window.foremen);
-          initChips('checkerContainer', window.checkers);
-        }, err => console.error('lists listen', err));
-      } catch(e) { console.error('subscribeLists error', e); }
-    }
+  // add sdt - public (no login)
+  function addSdt(unit) {
+    const payload = { unit, driver:'', trip:0, ket:'', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+    db.collection('sdt').add(payload).then(()=>{
+      // write history
+      db.collection('history').add({ action:'addSdt', unit, by:'public', ts: firebase.firestore.FieldValue.serverTimestamp()});
+    }).catch(e=> { console.error(e); alert('Gagal menambah SDT'); });
+  }
 
-    function saveLists(newData) {
-      if(!isAdmin) { alert('Butuh unlock admin untuk menyimpan perubahan.'); return; }
-      db.doc(LISTS_DOC).set(newData, { merge: true }).catch(e => console.error('saveLists', e));
-    }
+  function delSdt(i) {
+    const id = sdtData[i]?.id; if(!id) return;
+    db.collection('sdt').doc(id).delete().then(()=>{
+      db.collection('history').add({ action:'delSdt', id, by:'public', ts: firebase.firestore.FieldValue.serverTimestamp()});
+    }).catch(e=>{console.error(e); alert('Gagal hapus');});
+  }
 
-    function addListItem(listName, value) {
-      if(!isAdmin) { alert('Butuh unlock admin.'); return; }
-      if(!value || !value.trim()) return;
-      value = value.trim();
-      const arr = window[listName] || [];
-      arr.push(value);
-      const payload = {}; payload[listName] = arr;
-      saveLists(payload);
-    }
-    function removeListItem(listName, index) {
-      if(!isAdmin) { alert('Butuh unlock admin.'); return; }
-      const arr = window[listName] || [];
-      if(index < 0 || index >= arr.length) return;
-      arr.splice(index, 1);
-      const payload = {}; payload[listName] = arr;
-      saveLists(payload);
-    }
-    function updateListItem(listName, index, newValue) {
-      if(!isAdmin) { alert('Butuh unlock admin.'); return; }
-      const arr = window[listName] || [];
-      if(index < 0 || index >= arr.length) return;
-      arr[index] = newValue;
-      const payload = {}; payload[listName] = arr;
-      saveLists(payload);
-    }
+  function updSdt(i,f,v) {
+    const id = sdtData[i]?.id; if(!id) return;
+    const payload = {}; payload[f] = (f==='trip'? parseInt(v)||0 : v);
+    db.collection('sdt').doc(id).set(payload, { merge:true }).then(()=>{
+      db.collection('history').add({ action:'updSdt', id, field:f, value:payload[f], by:'public', ts: firebase.firestore.FieldValue.serverTimestamp()});
+    }).catch(e=>console.error(e));
+  }
 
-    function renderConfigLists() {
-      const cp = document.getElementById('configPanel');
-      if(!cp) return;
-      const lists = [
-        { key: 'supervisors', title: 'Supervisor' },
-        { key: 'foremen', title: 'Foreman' },
-        { key: 'checkers', title: 'Checker' },
-        { key: 'pts', title: 'PT / Plant' },
-        { key: 'sds', title: 'SD (Section)' },
-        { key: 'masterUnits', title: 'Master Units' },
-        { key: 'masterDrivers', title: 'Master Drivers' }
-      ];
-      let html = '<div class="space-y-3">';
-      lists.forEach(list => {
-        const arr = (window[list.key] || []);
-        html += `<div class="bg-white p-2 rounded border"><div class="flex justify-between items-center mb-2"><strong class="text-xs">${list.title}</strong><small class="text-[10px] text-slate-400">${arr.length} item</small></div>`;
-        html += `<div class="flex flex-wrap gap-2 mb-2">`;
-        arr.forEach((v,i) => {
-          html += `<div class="p-1 rounded bg-slate-50 border text-xs flex items-center gap-2"><span>${v}</span><button onclick="removeListItem('${list.key}',${i})" title="Hapus" class="text-red-500 text-[12px]">×</button></div>`;
-        });
-        html += `</div>`;
-        html += `<div class="flex gap-2"><input id="inp-${list.key}" placeholder="Tambah ${list.title}" class="input-base py-1 text-sm"><button onclick="addListItem('${list.key}', document.getElementById('inp-${list.key}').value); document.getElementById('inp-${list.key}').value='';" class="bg-indigo-600 text-white px-3 rounded text-sm">Tambah</button></div>`;
-        html += `</div>`;
-      });
-      html += '</div>';
-      cp.innerHTML = html;
-    }
-
-    // --- SDT collection subscribe ---
-    function subscribeSdtList() {
-      try {
-        db.collection('sdt').orderBy('unit').onSnapshot(snapshot => {
-          sdtData = [];
-          snapshot.forEach(doc => sdtData.push({ id: doc.id, ...doc.data() }));
-          renderSdtList();
-        }, err => console.error('sdt listen', err));
-      } catch(e) { console.error('subscribeSdtList', e); }
-    }
-
-    // add SDT (this creates a doc and the onSnapshot will refresh UI)
-    function addSdt(u) {
-      if(!isAdmin) { alert('Butuh unlock admin untuk menambah SDT.'); return; }
-      db.collection('sdt').add({ unit:u, driver:'', trip:0, ket:'', createdAt: firebase.firestore.FieldValue.serverTimestamp() })
-        .then(ref => {
-          // optionally scroll to last after small delay
-          setTimeout(()=>document.getElementById('sdtList')?.lastElementChild?.scrollIntoView({behavior:'smooth', block:'center'}), 200);
-        }).catch(e => console.error('addSdt', e));
-    }
-
-    function delSdt(i) {
-      if(!isAdmin) { alert('Butuh unlock admin untuk menghapus SDT.'); return; }
-      const id = sdtData[i]?.id; if(!id) return;
-      db.collection('sdt').doc(id).delete().catch(e=>console.error(e));
-    }
-
-    function updSdt(i, f, v) {
-      if(!sdtData[i]) return;
-      sdtData[i][f] = v;
-      const id = sdtData[i]?.id;
-      if(id && isAdmin) {
-        const payload = {}; payload[f] = v;
-        db.collection('sdt').doc(id).set(payload, { merge: true }).catch(e=>console.error(e));
-      }
-    }
-
-    function renderUnitButtons() {
-      document.getElementById('unitBtnContainer').innerHTML = (masterUnits || []).map(u =>
-        `<button onclick="addSdt('${u}')" class="bg-white border border-slate-300 text-xs font-bold text-slate-600 px-3 py-1 rounded shadow-sm hover:bg-indigo-50 hover:text-indigo-600 transition active:scale-95">${u}</button>`
-      ).join('');
-    }
-
-    function renderSdtList() {
-      const c = document.getElementById('sdtList');
-      const m = document.getElementById('emptyMsg');
-      if(sdtData.length === 0) { c.innerHTML = ''; m.style.display = 'block'; return; }
-      m.style.display = 'none';
-      c.innerHTML = sdtData.map((d,i) => {
-        const drvOpts = `<option value="">Driver...</option>` + (masterDrivers || []).map(dd=>`<option value="${dd}" ${dd===d.driver?'selected':''}>${dd}</option>`).join('');
-        return `
-          <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2 relative">
-            <div class="flex justify-between items-center border-b border-slate-50 pb-1">
-              <span class="font-bold text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${d.unit}</span>
-              <button onclick="delSdt(${i})" class="text-red-400 hover:text-red-600 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
-            <div class="grid grid-cols-12 gap-2 text-xs items-center">
-              <div class="col-span-5"><select onchange="updSdt(${i},'driver',this.value)" class="w-full border rounded p-1 bg-white outline-none">${drvOpts}</select></div>
-              <div class="col-span-3 relative"><input type="number" value="${d.trip||0}" placeholder="0" oninput="updSdt(${i},'trip',this.value)" class="w-full border rounded p-1 text-center font-bold outline-none"><span class="absolute right-1 top-1.5 text-[8px] text-slate-400 hidden sm:block">Trp</span></div>
-              <div class="col-span-4"><input type="text" value="${d.ket||''}" placeholder="Ket..." oninput="updSdt(${i},'ket',this.value)" class="w-full border rounded p-1 text-red-500 italic outline-none"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      lucide.createIcons();
-    }
-
-    // --- Admin gate ---
-    function promptAdmin() {
-      const pw = prompt('Masukkan password admin (prototype):');
-      if(pw === null) return;
-      if(pw === DEV_ADMIN_PASSWORD) {
-        isAdmin = true;
-        document.getElementById('unlockBtn').innerText = 'Admin ✔';
-        document.getElementById('unlockBtn').classList.remove('bg-amber-500');
-        document.getElementById('unlockBtn').classList.add('bg-emerald-600');
-        alert('Unlocked: fitur tulis aktif (prototype).');
-      } else {
-        alert('Password salah.');
-      }
-    }
-
-    // --- Copy report ---
-    function getChecked(id) {
-      const c = Array.from(document.querySelectorAll(`#${id} input:checked`)).map(e => e.parentElement.innerText.trim());
-      let mId = ''; if(id.includes('spv')) mId = 'inputSupervisorLainnya'; if(id.includes('foreman')) mId = 'inputForemanLainnya'; if(id.includes('checker')) mId = 'inputCheckerLainnya';
-      const m = document.getElementById(mId).value.trim(); if(m) c.push(m); return c.join(', ');
-    }
-
-    function copyReport(isMalam) {
-      const shift = document.getElementById('inputShift').value;
-      const date = document.getElementById('inputTanggal').value.split('-');
-      const fmtDate = date.length===3 ? `${date[2]}/${["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"][parseInt(date[1])-1]}/${date[0].slice(-2)}` : '-';
-
-      let txt = `*CHP OPERATION*\n*${shift}*\n*${fmtDate}*\n\nSupervisor : ${getChecked('spvContainer')}\nForeman   : ${getChecked('foremanContainer')}\nChecker      : ${getChecked('checkerContainer')}\n\nEfektivitas Running\n`;
-      ['SD1','SD2','SD3'].forEach(sd => txt += `- ${sd} = ${(document.getElementById(`eff-${sd}`).dataset.copy||'-')}\n`);
-      txt += `\n`;
-
-      const val = (id) => parseFloat(document.getElementById(id).value)||0;
-      const calc = (b) => isMalam ? (val(`${b}-trip-malam`)-val(`${b}-trip-siang`)) : val(`${b}-trip-siang`);
-      const mt=calc('mha'), kt=calc('kai'), bt=calc('buma'), tot=mt+kt+bt;
-      const tip=val('inputTippingRom'), trans=val('inputTransferRom');
-
-      txt += `Hauling\nMHA    : ${mt} TRIP\nBUMA   : ${bt} TRIP\nKAI    : ${kt} TRIP\nIP     : 0 TRIP\nTotal Hauling : ${tot} Trip\n\n`;
-      txt += `TIPPING ROM        = ${tip} Trip\nTRANSFER ROM   = ${trans} Trip\nTRANSFER ROM + HAULING = ${trans+tot} Trip\n\n`;
-
-      const suf = isMalam ? 'malam' : 'siang';
-      txt += `Unit 2 Trip\n- MHA   = ${document.getElementById(`mha-res-${suf}`).innerText} Unit\n- BUMA  = ${document.getElementById(`buma-res-${suf}`).innerText} Unit\n- KAI   = ${document.getElementById(`kai-res-${suf}`).innerText} Unit\n\n`;
-
-      txt += `Unit SDT Running:\n`;
-      if(sdtData.length === 0) txt += `(List Kosong)`;
-      else sdtData.forEach((d,i) => txt += `${i+1}.SDT ${d.unit} ${d.driver?`(${d.driver})`:''} : ${d.trip?d.trip+' Trip':''} ${d.ket?`*${d.ket}*`:''}\n`);
-
-      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-      const t = document.getElementById('toast'); t.classList.remove('hidden','translate-y-10');
-      setTimeout(()=>t.classList.add('translate-y-10'), 2000); setTimeout(()=>t.classList.add('hidden'), 2300);
-    }
-
-    // copy full page html
-    function copyFullHTML() {
-      try {
-        const full = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
-        navigator.clipboard.writeText(full).then(() => {
-          alert('Seluruh kode halaman disalin ke clipboard. Silakan paste ke TrebEdit.');
-        }).catch(err => {
-          const ta = document.createElement('textarea'); ta.value = full; document.body.appendChild(ta); ta.select();
-          document.execCommand('copy'); document.body.removeChild(ta); alert('Disalin (fallback).');
-        });
-      } catch(e) { alert('Gagal menyalin: ' + e.message); }
-    }
-
-    // =========================
-    // Safe init: tunggu firebase SDK lalu inisialisasi & subscribe
-    // =========================
-    function waitForFirebaseAndInit() {
-      const maxTries = 60; // 60 * 200ms = 12s
-      let tries = 0;
-      const id = setInterval(() => {
-        tries++;
-        if (window.firebase && firebase.firestore) {
-          clearInterval(id);
-          try {
-            if (!firebase.apps || firebase.apps.length === 0) {
-              firebase.initializeApp(firebaseConfig);
-            }
-            window.db = firebase.firestore();
-            // subscribe lists & sdt
-            subscribeLists();
-            subscribeSdtList();
-          } catch (e) {
-            console.error('Error init firebase:', e);
-            alert('Gagal inisialisasi Firebase: ' + e.message);
-          }
-        } else if (tries >= maxTries) {
-          clearInterval(id);
-          console.error('Firebase SDK tidak tersedia setelah menunggu.');
-          alert('Firebase SDK gagal dimuat. Periksa koneksi internet atau buka file di browser (Chrome).');
-        }
-      }, 200);
-    }
-
-    // panggil init
-    waitForFirebaseAndInit();
+  function refreshNow(){ subscribeSdtList(); subscribeLists(); }
   </script>
 </body>
 </html>
